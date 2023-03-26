@@ -1,0 +1,155 @@
+PUT http://localhost:8080/fitnessCentres
+Content-Type: application/json
+
+{
+  "name": "Kor",
+  "timings": [
+    [1, 2],
+    [2, 3]
+  ],
+  "supportedActivities": [
+    "WEIGHTS",
+    "YOGA"
+  ]
+}
+
+###
+
+PUT http://localhost:8080/fitnessCentres
+Content-Type: application/json
+
+{
+  "name": "Jayanagar",
+  "timings": [
+    [1, 2],
+    [2, 3]
+  ],
+  "supportedActivities": [
+    "WEIGHTS",
+    "YOGA"
+  ]
+}
+
+###
+
+PUT http://localhost:8080/fitnessCentres/1/slots
+Content-Type: application/json
+
+{
+  "fitnessCentreId": 1,
+  "activity": "WEIGHTS",
+  "startTime": 1,
+  "endTime": 2,
+  "noOfSlots": 10
+}
+
+###
+
+PUT http://localhost:8080/fitnessCentres/1/slots
+Content-Type: application/json
+
+{
+  "fitnessCentreId": 1,
+  "activity": "YOGA",
+  "startTime": 2,
+  "endTime": 3,
+  "noOfSlots": 10
+}
+
+###
+
+PUT http://localhost:8080/fitnessCentres/1/slots
+Content-Type: application/json
+
+{
+  "fitnessCentreId": 1,
+  "activity": "YOGA",
+  "startTime": 3,
+  "endTime": 4,
+  "noOfSlots": 10
+}
+
+###
+
+GET http://localhost:8080/fitnessCentres/1/slots
+
+###
+
+PUT http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "name": "ABC"
+}
+
+###
+
+PUT http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "name": "DEF"
+}
+
+###
+
+GET http://localhost:8080/users
+
+###
+
+GET http://localhost:8080/search
+Content-Type: application/json
+
+{
+  "activity" : "YOGA"
+}
+
+###
+
+GET http://localhost:8080/search
+Content-Type: application/json
+
+{
+  "activity" : "YOGA",
+  "fitnessCentreName": "Kor"
+}
+
+###
+
+PUT http://localhost:8080/bookings
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "slotId": 1
+}
+
+###
+
+GET http://localhost:8080/bookings
+
+###
+
+PATCH http://localhost:8080/bookings/1
+
+###
+
+GET http://localhost:8080/bookings
+
+###
+
+PUT http://localhost:8080/bookings
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "slotId": 1
+}
+
+###
+
+GET http://localhost:8080/bookings
+
+
+
+
