@@ -17,23 +17,13 @@ The following guides illustrate how to use some features concretely:
 * [Serving Web Content with Spring MVC](https://spring.io/guides/gs/serving-web-content/)
 * [Building REST services with Spring](https://spring.io/guides/tutorials/rest/)
 
+
+### Sample http request
+
+For sample request of all APIs refer [this](FitnessCentre.http) file
+
 ```
 curl -X PUT http://localhost:8080/fitnessCentres \
         -H "Content-Type: application/json" \
-        -d '{"name": "Kor", "timings":[1,2,3,4], "supportedActivities": ["WEIGHTS","YOGA"]}'
+        -d '{"name": "Kor", "timings":[[1,2],[3,4]], "supportedActivities": ["WEIGHTS","YOGA"]}'
 ```
-
-
-Publisher
-1. CancelBookingPublisher
-
-Topic:
- CancelBooking
-
-SubscribersList
-Map<slotId, TreeSet<userId,registered_at>>
-
-Subscribers
-1. NotifyBookingCancellationUsers
-
-publisher->(async) publish(ClassTopic) (async)-> subscribe(NotifyBookingCancellationUsers)
