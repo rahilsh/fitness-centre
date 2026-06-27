@@ -5,7 +5,9 @@ import com.rsh.fitness_centre.entity.request.LoginRequest;
 import com.rsh.fitness_centre.entity.request.RegisterRequest;
 import com.rsh.fitness_centre.entity.response.LoginResponse;
 import com.rsh.fitness_centre.entity.response.UserResponse;
+import com.rsh.fitness_centre.security.TokenBlacklistService;
 import com.rsh.fitness_centre.security.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import com.rsh.fitness_centre.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,11 +42,13 @@ public class AuthController {
 
   private final UserService userService;
   private final JwtTokenProvider tokenProvider;
+  private final TokenBlacklistService tokenBlacklistService;
 
   @Autowired
-  public AuthController(UserService userService, JwtTokenProvider tokenProvider) {
+  public AuthController(UserService userService, JwtTokenProvider tokenProvider, TokenBlacklistService tokenBlacklistService) {
     this.userService = userService;
     this.tokenProvider = tokenProvider;
+    this.tokenBlacklistService = tokenBlacklistService;
   }
 
   /**
@@ -181,5 +185,33 @@ public class AuthController {
 
     logger.info("Current user information retrieved: {}", user.getEmail());
     return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Safe logout endpoint that blacklists the current JWT access token.
+   *
+   * @param request the HTTP servlet request
+   * @return success response
+   */
+  @PostMapping("/logout")
+  @Operation(summary = "Logout user and revoke access token")
+  @SecurityRequirement(name = "bearer-jwt")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Logout successful"),
+      @ApiResponse(responseCode = "401", description = "Unauthorized")
+  })
+  public ResponseEntity<Void> logout(HttpServletRequest request) {
+    String bearerToken = request.getHeader("Authorization");
+    if (org.springframework.util.StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+      String jwt = bearerToken.substring(7);
+      if (tokenProvider.validateToken(jwt)) {
+        String tokenId = tokenProvider.extractTokenId(jwt);
+        long expirationSeconds = tokenProvider.getExpirationTimeInSeconds();
+        tokenBlacklistService.blacklistToken(tokenId, expirationSeconds);
+        logger.info("User logged out successfully and token blacklisted: {}", tokenId);
+      }
+    }
+    SecurityContextHolder.clearContext();
+    return ResponseEntity.ok().build();
   }
 }

@@ -11,6 +11,7 @@ import com.rsh.fitness_centre.entity.request.LoginRequest;
 import com.rsh.fitness_centre.entity.request.RegisterRequest;
 import com.rsh.fitness_centre.entity.response.LoginResponse;
 import com.rsh.fitness_centre.security.JwtTokenProvider;
+import com.rsh.fitness_centre.security.TokenBlacklistService;
 import com.rsh.fitness_centre.service.UserService;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -38,9 +39,12 @@ class AuthControllerTest {
   @Mock
   private JwtTokenProvider tokenProvider;
 
+  @Mock
+  private TokenBlacklistService tokenBlacklistService;
+
   @BeforeEach
   void setUp() {
-    authController = new AuthController(userService, tokenProvider);
+    authController = new AuthController(userService, tokenProvider, tokenBlacklistService);
   }
 
   @Test

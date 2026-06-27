@@ -7,6 +7,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import org.slf4j.Logger;
@@ -38,8 +39,10 @@ public class JwtTokenProvider {
     SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     Date now = new Date();
     Date expirationDate = new Date(now.getTime() + jwtExpirationMs);
+    String tokenId = UUID.randomUUID().toString();
 
     String token = Jwts.builder()
+        .id(tokenId) // Add JWT ID (jti) for token revocation
         .subject(user.getId().toString())
         .claim("email", user.getEmail())
         .claim("roles", user.getRoles().stream()
@@ -139,6 +142,28 @@ public class JwtTokenProvider {
     } catch (Exception ex) {
       logger.error("Failed to extract roles from token: {}", ex.getMessage());
       return java.util.Collections.emptySet();
+    }
+  }
+
+  /**
+   * Extract token ID (jti claim) from JWT token.
+   *
+   * @param token the JWT token (without Bearer prefix)
+   * @return the token ID or null if token is invalid
+   */
+  public String extractTokenId(String token) {
+    try {
+      SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+      Claims claims = Jwts.parser()
+          .verifyWith(key)
+          .build()
+          .parseSignedClaims(token)
+          .getPayload();
+
+      return claims.getId();
+    } catch (Exception ex) {
+      logger.error("Failed to extract token ID from token: {}", ex.getMessage());
+      return null;
     }
   }
 

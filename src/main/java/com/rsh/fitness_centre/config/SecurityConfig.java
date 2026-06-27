@@ -2,6 +2,7 @@ package com.rsh.fitness_centre.config;
 
 import com.rsh.fitness_centre.security.JwtAuthenticationFilter;
 import com.rsh.fitness_centre.security.JwtTokenProvider;
+import com.rsh.fitness_centre.security.TokenBlacklistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +32,9 @@ public class SecurityConfig {
   @Autowired
   private JwtTokenProvider jwtTokenProvider;
 
+  @Autowired
+  private TokenBlacklistService tokenBlacklistService;
+
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder(10);
@@ -44,7 +48,7 @@ public class SecurityConfig {
 
   @Bean
   public JwtAuthenticationFilter jwtAuthenticationFilter() {
-    return new JwtAuthenticationFilter(jwtTokenProvider);
+    return new JwtAuthenticationFilter(jwtTokenProvider, tokenBlacklistService);
   }
 
   @Bean
