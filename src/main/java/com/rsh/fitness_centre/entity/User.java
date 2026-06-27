@@ -1,15 +1,28 @@
 package com.rsh.fitness_centre.entity;
 
 import com.google.common.base.Objects;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
+@Entity(name = "app_user")
+@NoArgsConstructor
 @Getter
 public class User {
 
-  private final int id;
-  private final String name;
+  @Id
+  private int id;
+  
+  private String name;
+  
+  public User(int id, String name) {
+    this.id = id;
+    this.name = name;
+  }
 
   @Override
   public boolean equals(Object o) {

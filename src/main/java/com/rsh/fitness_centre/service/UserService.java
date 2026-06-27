@@ -1,8 +1,9 @@
 package com.rsh.fitness_centre.service;
 
 import com.rsh.fitness_centre.entity.User;
-import com.rsh.fitness_centre.store.UserStore;
+import com.rsh.fitness_centre.repository.UserRepository;
 import com.rsh.fitness_centre.util.SequenceGenerator;
+import java.util.HashSet;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,21 +12,21 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
   private final SequenceGenerator sequenceGenerator;
-  private final UserStore userStore;
+  private final UserRepository userRepository;
 
   @Autowired
-  public UserService(SequenceGenerator sequenceGenerator, UserStore userStore) {
+  public UserService(SequenceGenerator sequenceGenerator, UserRepository userRepository) {
     this.sequenceGenerator = sequenceGenerator;
-    this.userStore = userStore;
+    this.userRepository = userRepository;
   }
 
   public User addUser(String name) {
     User user = new User(sequenceGenerator.getNext("User"), name);
-    userStore.addUser(user);
+    userRepository.save(user);
     return user;
   }
 
   public Set<User> getAllUsers() {
-    return userStore.getAll();
+    return new HashSet<>(userRepository.findAll());
   }
 }

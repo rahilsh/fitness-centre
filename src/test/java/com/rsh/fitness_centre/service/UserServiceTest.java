@@ -7,9 +7,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.rsh.fitness_centre.entity.User;
-import com.rsh.fitness_centre.store.UserStore;
+import com.rsh.fitness_centre.repository.UserRepository;
 import com.rsh.fitness_centre.util.SequenceGenerator;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,11 +30,11 @@ class UserServiceTest {
   private SequenceGenerator sequenceGenerator;
 
   @Mock
-  private UserStore userStore;
+  private UserRepository userRepository;
 
   @BeforeEach
   void setUp() {
-    userService = new UserService(sequenceGenerator, userStore);
+    userService = new UserService(sequenceGenerator, userRepository);
   }
 
   @Test
@@ -51,7 +53,7 @@ class UserServiceTest {
     assertEquals(userId, result.getId());
     assertEquals(userName, result.getName());
     verify(sequenceGenerator, times(1)).getNext("User");
-    verify(userStore, times(1)).addUser(result);
+    verify(userRepository, times(1)).save(result);
   }
 
   @Test
@@ -69,7 +71,7 @@ class UserServiceTest {
     assertNotNull(result);
     assertEquals(userId, result.getId());
     assertEquals(userName, result.getName());
-    verify(userStore, times(1)).addUser(result);
+    verify(userRepository, times(1)).save(result);
   }
 
   @Test
@@ -79,7 +81,7 @@ class UserServiceTest {
     Set<User> users = new HashSet<>();
     users.add(new User(1, "John Doe"));
     users.add(new User(2, "Jane Doe"));
-    when(userStore.getAll()).thenReturn(users);
+    when(userRepository.findAll()).thenReturn(new ArrayList<>(users));
 
     // Act
     Set<User> result = userService.getAllUsers();
@@ -87,15 +89,15 @@ class UserServiceTest {
     // Assert
     assertNotNull(result);
     assertEquals(2, result.size());
-    verify(userStore, times(1)).getAll();
+    verify(userRepository, times(1)).findAll();
   }
 
   @Test
   @DisplayName("Should get empty set when no users exist")
   void testGetAllUsersEmpty() {
     // Arrange
-    Set<User> emptySet = new HashSet<>();
-    when(userStore.getAll()).thenReturn(emptySet);
+    List<User> emptyList = new ArrayList<>();
+    when(userRepository.findAll()).thenReturn(emptyList);
 
     // Act
     Set<User> result = userService.getAllUsers();
@@ -103,7 +105,7 @@ class UserServiceTest {
     // Assert
     assertNotNull(result);
     assertEquals(0, result.size());
-    verify(userStore, times(1)).getAll();
+    verify(userRepository, times(1)).findAll();
   }
 
   @Test

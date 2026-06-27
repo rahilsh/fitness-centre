@@ -1,22 +1,39 @@
 package com.rsh.fitness_centre.entity;
 
 import com.google.common.base.Objects;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 import java.util.HashSet;
-import java.util.List;import java.util.Set;
-import lombok.AllArgsConstructor;
+import java.util.List;
+import java.util.Set;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
+@Entity
+@NoArgsConstructor
 @Getter
 public class FitnessCentre {
 
+  @Id
+  private int id;
 
-  private final int id;
+  private String name;
 
-  private final String name;
+  @Transient
+  private Set<List<Integer>> timings = new HashSet<>();
+  
+  @Transient
+  private Set<Activity> supportedActivities = new HashSet<>();
 
-  private final Set<List<Integer>> timings = new HashSet<>();
-  private final Set<Activity> supportedActivities = new HashSet<>();
+  public FitnessCentre(int id, String name) {
+    this.id = id;
+    this.name = name;
+    this.timings = new HashSet<>();
+    this.supportedActivities = new HashSet<>();
+  }
 
   @Override
   public boolean equals(Object o) {

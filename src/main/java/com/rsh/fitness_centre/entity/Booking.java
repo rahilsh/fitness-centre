@@ -1,22 +1,45 @@
 package com.rsh.fitness_centre.entity;
 
 import com.google.common.base.Objects;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Entity
 @Getter
-@AllArgsConstructor
+@NoArgsConstructor
 public class Booking {
 
-  private final int id;
-  private final int slotId;
-  private final int bookedBy;
-  private final LocalDateTime bookedAt;
+  @Id
+  private int id;
+  
+  private int slotId;
+  
+  private int bookedBy;
+  
+  private LocalDateTime bookedAt;
 
   @Setter
+  @Enumerated(EnumType.STRING)
   private BookingStatus status;
+  
+  public Booking(int id, int slotId, int bookedBy, LocalDateTime bookedAt, BookingStatus status) {
+    this.id = id;
+    this.slotId = slotId;
+    this.bookedBy = bookedBy;
+    this.bookedAt = bookedAt;
+    this.status = status;
+  }
 
   @Override
   public boolean equals(Object o) {
