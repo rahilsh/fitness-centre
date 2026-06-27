@@ -72,6 +72,13 @@ public class HttpFunctionalTests {
         return "http://localhost:" + port;
     }
 
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        if (httpClient != null) {
+            httpClient.close();
+        }
+    }
+
     @BeforeEach
     void setUp() throws Exception {
         httpClient = HttpClient.newHttpClient();
