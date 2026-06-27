@@ -80,7 +80,7 @@ public class SearchController {
             s -> {
               Optional<Booking> optionalBooking =
                   bookingOfCentre.stream()
-                      .filter(b -> s.getId() == b.getSlotId()) // check cancelled
+                      .filter(b -> s.getId().equals(b.getSlot().getId())) // check cancelled
                       .findAny();
               if (optionalBooking.isEmpty()) {
                 availableSlots.add(s);

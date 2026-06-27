@@ -38,7 +38,7 @@ class UserControllerTest {
     // Arrange
     AddUserRequest request = new AddUserRequest();
     request.setName("John Doe");
-    User user = new User(1, "John Doe");
+    User user = new User(1L, "John Doe");
     when(userService.addUser("John Doe")).thenReturn(user);
 
     // Act
@@ -46,7 +46,7 @@ class UserControllerTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals(1, result.getId());
+    assertEquals(1L, result.getId());
     assertEquals("John Doe", result.getName());
     verify(userService, times(1)).addUser("John Doe");
   }
@@ -56,8 +56,8 @@ class UserControllerTest {
   void testGetAllUsersSuccess() {
     // Arrange
     Set<User> users = new HashSet<>();
-    users.add(new User(1, "John Doe"));
-    users.add(new User(2, "Jane Doe"));
+    users.add(new User(1L, "John Doe"));
+    users.add(new User(2L, "Jane Doe"));
     when(userService.getAllUsers()).thenReturn(users);
 
     // Act
@@ -75,7 +75,7 @@ class UserControllerTest {
     // Arrange
     AddUserRequest request = new AddUserRequest();
     request.setName("");
-    User user = new User(2, "");
+    User user = new User(2L, "");
     when(userService.addUser("")).thenReturn(user);
 
     // Act
@@ -83,7 +83,7 @@ class UserControllerTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals(2, result.getId());
+    assertEquals(2L, result.getId());
     assertEquals("", result.getName());
   }
 
@@ -107,7 +107,7 @@ class UserControllerTest {
     // Arrange
     AddUserRequest request = new AddUserRequest();
     request.setName("John@#$%Doe");
-    User user = new User(3, "John@#$%Doe");
+    User user = new User(3L, "John@#$%Doe");
     when(userService.addUser("John@#$%Doe")).thenReturn(user);
 
     // Act
@@ -124,14 +124,14 @@ class UserControllerTest {
     String longName = "A".repeat(500);
     AddUserRequest request = new AddUserRequest();
     request.setName(longName);
-    User user = new User(4, longName);
+    User user = new User(4L, longName);
     when(userService.addUser(longName)).thenReturn(user);
 
     // Act
     User result = userController.addUser(request);
 
     // Assert
-    assertEquals(4, result.getId());
+    assertEquals(4L, result.getId());
     assertEquals(longName, result.getName());
   }
 
@@ -144,8 +144,8 @@ class UserControllerTest {
     AddUserRequest request2 = new AddUserRequest();
     request2.setName("User2");
 
-    User user1 = new User(1, "User1");
-    User user2 = new User(2, "User2");
+    User user1 = new User(1L, "User1");
+    User user2 = new User(2L, "User2");
 
     when(userService.addUser("User1")).thenReturn(user1);
     when(userService.addUser("User2")).thenReturn(user2);
@@ -155,8 +155,8 @@ class UserControllerTest {
     User result2 = userController.addUser(request2);
 
     // Assert
-    assertEquals(1, result1.getId());
-    assertEquals(2, result2.getId());
+    assertEquals(1L, result1.getId());
+    assertEquals(2L, result2.getId());
     verify(userService, times(1)).addUser("User1");
     verify(userService, times(1)).addUser("User2");
   }
@@ -167,7 +167,7 @@ class UserControllerTest {
     // Arrange
     AddUserRequest request = new AddUserRequest();
     request.setName("Test User");
-    User user = new User(5, "Test User");
+    User user = new User(5L, "Test User");
     when(userService.addUser("Test User")).thenReturn(user);
 
     // Act

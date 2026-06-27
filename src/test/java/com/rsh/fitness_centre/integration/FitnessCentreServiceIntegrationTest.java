@@ -119,7 +119,7 @@ class FitnessCentreServiceIntegrationTest {
     assertEquals(9, slot.getStartTime());
     assertEquals(10, slot.getEndTime());
     assertEquals(20, slot.getNoOfSeats());
-    assertEquals(centre.getId(), slot.getFitnessCenterId());
+    assertEquals(centre.getId(), slot.getFitnessCentre().getId());
 
     // Verify persistence
     Slot persistedSlot = slotRepository.findById(slot.getId()).orElse(null);

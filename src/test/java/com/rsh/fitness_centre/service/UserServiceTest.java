@@ -2,16 +2,18 @@ package com.rsh.fitness_centre.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.rsh.fitness_centre.entity.User;
 import com.rsh.fitness_centre.repository.UserRepository;
-import com.rsh.fitness_centre.util.SequenceGenerator;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,14 +29,11 @@ class UserServiceTest {
   private UserService userService;
 
   @Mock
-  private SequenceGenerator sequenceGenerator;
-
-  @Mock
   private UserRepository userRepository;
 
   @BeforeEach
   void setUp() {
-    userService = new UserService(sequenceGenerator, userRepository);
+    userService = new UserService(userRepository);
   }
 
   @Test
@@ -42,18 +41,17 @@ class UserServiceTest {
   void testAddUserSuccess() {
     // Arrange
     String userName = "John Doe";
-    int userId = 1;
-    when(sequenceGenerator.getNext("User")).thenReturn(userId);
+    User expectedUser = new User(1L, userName);
+    when(userRepository.save(any(User.class))).thenReturn(expectedUser);
 
     // Act
     User result = userService.addUser(userName);
 
     // Assert
     assertNotNull(result);
-    assertEquals(userId, result.getId());
+    assertEquals(1L, result.getId());
     assertEquals(userName, result.getName());
-    verify(sequenceGenerator, times(1)).getNext("User");
-    verify(userRepository, times(1)).save(result);
+    verify(userRepository, times(1)).save(any(User.class));
   }
 
   @Test
@@ -61,17 +59,17 @@ class UserServiceTest {
   void testAddUserWithEmptyName() {
     // Arrange
     String userName = "";
-    int userId = 2;
-    when(sequenceGenerator.getNext("User")).thenReturn(userId);
+    User expectedUser = new User(2L, userName);
+    when(userRepository.save(any(User.class))).thenReturn(expectedUser);
 
     // Act
     User result = userService.addUser(userName);
 
     // Assert
     assertNotNull(result);
-    assertEquals(userId, result.getId());
+    assertEquals(2L, result.getId());
     assertEquals(userName, result.getName());
-    verify(userRepository, times(1)).save(result);
+    verify(userRepository, times(1)).save(any(User.class));
   }
 
   @Test
@@ -79,8 +77,8 @@ class UserServiceTest {
   void testGetAllUsersSuccess() {
     // Arrange
     Set<User> users = new HashSet<>();
-    users.add(new User(1, "John Doe"));
-    users.add(new User(2, "Jane Doe"));
+    users.add(new User(1L, "John Doe"));
+    users.add(new User(2L, "Jane Doe"));
     when(userRepository.findAll()).thenReturn(new ArrayList<>(users));
 
     // Act
@@ -109,21 +107,69 @@ class UserServiceTest {
   }
 
   @Test
-  @DisplayName("Should generate sequential user IDs")
-  void testSequentialUserIds() {
+  @DisplayName("Should get user by ID successfully")
+  void testGetUserByIdSuccess() {
     // Arrange
-    when(sequenceGenerator.getNext("User")).thenReturn(1).thenReturn(2).thenReturn(3);
+    Long userId = 1L;
+    User mockUser = new User(userId, "John Doe");
+    when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 
     // Act
-    User user1 = userService.addUser("User1");
-    User user2 = userService.addUser("User2");
-    User user3 = userService.addUser("User3");
+    User result = userService.getUserById(userId);
 
     // Assert
-    assertEquals(1, user1.getId());
-    assertEquals(2, user2.getId());
-    assertEquals(3, user3.getId());
-    verify(sequenceGenerator, times(3)).getNext("User");
+    assertNotNull(result);
+    assertEquals(userId, result.getId());
+    assertEquals("John Doe", result.getName());
+    verify(userRepository, times(1)).findById(userId);
+  }
+
+  @Test
+  @DisplayName("Should return null when user ID does not exist")
+  void testGetUserByIdNotFound() {
+    // Arrange
+    Long userId = 999L;
+    when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+    // Act
+    User result = userService.getUserById(userId);
+
+    // Assert
+    assertNull(result);
+    verify(userRepository, times(1)).findById(userId);
+  }
+
+  @Test
+  @DisplayName("Should get user by name successfully")
+  void testGetUserByNameSuccess() {
+    // Arrange
+    String userName = "John Doe";
+    User mockUser = new User(1L, userName);
+    when(userRepository.findByName(userName)).thenReturn(Optional.of(mockUser));
+
+    // Act
+    User result = userService.getUserByName(userName);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(1L, result.getId());
+    assertEquals(userName, result.getName());
+    verify(userRepository, times(1)).findByName(userName);
+  }
+
+  @Test
+  @DisplayName("Should return null when user name does not exist")
+  void testGetUserByNameNotFound() {
+    // Arrange
+    String userName = "Non-existent User";
+    when(userRepository.findByName(userName)).thenReturn(Optional.empty());
+
+    // Act
+    User result = userService.getUserByName(userName);
+
+    // Assert
+    assertNull(result);
+    verify(userRepository, times(1)).findByName(userName);
   }
 
   @Test
@@ -131,8 +177,8 @@ class UserServiceTest {
   void testAddUserWithSpecialCharacters() {
     // Arrange
     String userName = "John@#$%Doe";
-    int userId = 5;
-    when(sequenceGenerator.getNext("User")).thenReturn(userId);
+    User expectedUser = new User(5L, userName);
+    when(userRepository.save(any(User.class))).thenReturn(expectedUser);
 
     // Act
     User result = userService.addUser(userName);
@@ -147,8 +193,8 @@ class UserServiceTest {
   void testAddUserWithLongName() {
     // Arrange
     String userName = "A".repeat(1000);
-    int userId = 6;
-    when(sequenceGenerator.getNext("User")).thenReturn(userId);
+    User expectedUser = new User(6L, userName);
+    when(userRepository.save(any(User.class))).thenReturn(expectedUser);
 
     // Act
     User result = userService.addUser(userName);

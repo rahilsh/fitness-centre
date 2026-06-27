@@ -61,9 +61,9 @@ public class FitnessCentreController {
   })
   public Slot addActivity(
       @Valid @RequestBody AddActivityRequest request,
-      @Parameter(description = "Fitness Centre ID") @PathVariable int fitnessCentreId) {
+      @Parameter(description = "Fitness Centre ID") @PathVariable Long fitnessCentreId) {
     return fitnessCentreService.addActivity(
-        request.getFitnessCentreId(),
+        fitnessCentreId,
         request.getActivity(),
         request.getStartTime(),
         request.getEndTime(),
@@ -77,7 +77,7 @@ public class FitnessCentreController {
           content = @Content(mediaType = "application/json", schema = @Schema(implementation = Slot.class)))
   })
   public Set<Slot> getActivities(
-      @Parameter(description = "Fitness Centre ID") @PathVariable int fitnessCentreId) {
+      @Parameter(description = "Fitness Centre ID") @PathVariable Long fitnessCentreId) {
     return fitnessCentreService.getCentreActivities(fitnessCentreId);
   }
 }

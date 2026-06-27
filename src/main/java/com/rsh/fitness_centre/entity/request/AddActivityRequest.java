@@ -4,17 +4,11 @@ import com.rsh.fitness_centre.entity.Activity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
 @Schema(description = "Activity slot creation request")
 public class AddActivityRequest {
-
-  @NotNull(message = "Fitness centre ID is required")
-  @Positive(message = "Fitness centre ID must be positive")
-  @Schema(description = "ID of the fitness centre", example = "1")
-  private Integer fitnessCentreId;
   
   @NotNull(message = "Activity is required")
   @Schema(description = "Type of activity", example = "YOGA")
@@ -31,7 +25,7 @@ public class AddActivityRequest {
   private Integer endTime;
 
   @NotNull(message = "Number of slots is required")
-  @Positive(message = "Number of slots must be positive")
+  @Min(value = 1, message = "Number of slots must be positive")
   @Schema(description = "Number of available slots", example = "20")
   private Integer noOfSlots;
 

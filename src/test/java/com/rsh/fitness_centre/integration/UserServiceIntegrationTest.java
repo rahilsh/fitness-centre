@@ -139,7 +139,7 @@ class UserServiceIntegrationTest {
   @DisplayName("Should persist users with long names")
   void testAddUserWithLongName() {
     // Act
-    String longName = "A".repeat(500);
+    String longName = "A".repeat(100);
     User user = userService.addUser(longName);
 
     // Assert

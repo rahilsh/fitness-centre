@@ -13,12 +13,12 @@ import static org.mockito.Mockito.when;
 import com.rsh.fitness_centre.entity.Booking;
 import com.rsh.fitness_centre.entity.BookingStatus;
 import com.rsh.fitness_centre.entity.Slot;
+import com.rsh.fitness_centre.entity.User;
 import com.rsh.fitness_centre.exception.BookingNotFoundException;
 import com.rsh.fitness_centre.repository.BookingRepository;
 import com.rsh.fitness_centre.repository.SlotRepository;
-import com.rsh.fitness_centre.util.SequenceGenerator;
+import com.rsh.fitness_centre.repository.UserRepository;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,77 +44,79 @@ class BookingServiceTest {
   private SlotRepository slotRepository;
 
   @Mock
-  private SequenceGenerator sequenceGenerator;
+  private UserRepository userRepository;
 
   @BeforeEach
   void setUp() {
-    bookingService = new BookingService(bookingRepository, slotRepository, sequenceGenerator);
+    bookingService = new BookingService(bookingRepository, slotRepository, userRepository);
   }
 
-  // Test: addBooking with valid slot and user
+  private User createUser(Long id, String name) {
+    return new User(id, name);
+  }
+
+  private Slot createSlot(Long id) {
+    return new Slot(id, LocalDate.now(), null, 9, 10, 5, null);
+  }
+
+  private Booking createBooking(Long id, User user, Slot slot, BookingStatus status) {
+    return new Booking(id, user, slot, null, status);
+  }
+
   @Test
   @DisplayName("Should add booking successfully with valid slot and user")
   void testAddBookingSuccess() {
     // Arrange
-    int slotId = 1;
-    int userId = 100;
-    int bookingId = 1;
-    Slot mockSlot = new Slot(slotId, LocalDate.now(), null, 9, 10, 5, 1);
-    Booking expectedBooking = new Booking(bookingId, slotId, userId, LocalDateTime.now(), BookingStatus.BOOKED);
+    Long slotId = 1L;
+    Long userId = 100L;
+    User mockUser = createUser(userId, "John");
+    Slot mockSlot = createSlot(slotId);
+    Booking expectedBooking = createBooking(1L, mockUser, mockSlot, BookingStatus.BOOKED);
 
-    when(sequenceGenerator.getNext("Booking")).thenReturn(bookingId);
     when(slotRepository.findById(slotId)).thenReturn(Optional.of(mockSlot));
-    when(bookingRepository.save(expectedBooking)).thenReturn(expectedBooking);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+    when(bookingRepository.save(any(Booking.class))).thenReturn(expectedBooking);
 
     // Act
     Booking result = bookingService.addBooking(slotId, userId);
 
     // Assert
     assertNotNull(result);
-    assertEquals(bookingId, result.getId());
-    assertEquals(slotId, result.getSlotId());
-    assertEquals(userId, result.getBookedBy());
+    assertEquals(1L, result.getId());
+    assertEquals(slotId, result.getSlot().getId());
+    assertEquals(userId, result.getUser().getId());
     assertEquals(BookingStatus.BOOKED, result.getStatus());
-    verify(sequenceGenerator, times(1)).getNext("Booking");
     verify(slotRepository, times(1)).findById(slotId);
-    verify(bookingRepository, times(1)).save(result);
+    verify(userRepository, times(1)).findById(userId);
+    verify(bookingRepository, times(1)).save(any(Booking.class));
   }
 
-  // Test: addBooking with missing/non-existent slot
   @Test
-  @DisplayName("Should add booking even when slot is missing (service doesn't validate slot existence)")
+  @DisplayName("Should throw exception when slot is missing")
   void testAddBookingWithMissingSlot() {
     // Arrange
-    int slotId = 999;
-    int userId = 100;
-    int bookingId = 2;
-    Booking expectedBooking = new Booking(bookingId, slotId, userId, LocalDateTime.now(), BookingStatus.BOOKED);
+    Long slotId = 999L;
+    Long userId = 100L;
+    User mockUser = createUser(userId, "John");
 
-    when(sequenceGenerator.getNext("Booking")).thenReturn(bookingId);
     when(slotRepository.findById(slotId)).thenReturn(Optional.empty());
-    when(bookingRepository.save(expectedBooking)).thenReturn(expectedBooking);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 
-    // Act
-    Booking result = bookingService.addBooking(slotId, userId);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(bookingId, result.getId());
-    assertEquals(slotId, result.getSlotId());
-    verify(slotRepository, times(1)).findById(slotId);
-    verify(bookingRepository, times(1)).save(result);
+    // Act & Assert
+    assertThrows(BookingNotFoundException.class, () -> {
+      bookingService.addBooking(slotId, userId);
+    });
   }
 
-  // Test: cancelBooking successfully
   @Test
   @DisplayName("Should cancel booking successfully")
   void testCancelBookingSuccess() {
     // Arrange
-    int bookingId = 1;
-    int slotId = 1;
-    int userId = 100;
-    Booking existingBooking = new Booking(bookingId, slotId, userId, LocalDateTime.now(), BookingStatus.BOOKED);
-    Booking cancelledBooking = new Booking(bookingId, slotId, userId, LocalDateTime.now(), BookingStatus.CANCELLED);
+    Long bookingId = 1L;
+    User user = createUser(100L, "John");
+    Slot slot = createSlot(1L);
+    Booking existingBooking = createBooking(bookingId, user, slot, BookingStatus.BOOKED);
+    Booking cancelledBooking = createBooking(bookingId, user, slot, BookingStatus.CANCELLED);
 
     when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(existingBooking));
     when(bookingRepository.save(existingBooking)).thenReturn(cancelledBooking);
@@ -130,12 +132,11 @@ class BookingServiceTest {
     verify(bookingRepository, times(1)).save(existingBooking);
   }
 
-  // Test: cancelBooking with non-existent booking
   @Test
   @DisplayName("Should throw BookingNotFoundException when trying to cancel non-existent booking")
   void testCancelBookingNotFound() {
     // Arrange
-    int bookingId = 999;
+    Long bookingId = 999L;
     when(bookingRepository.findById(bookingId)).thenReturn(Optional.empty());
 
     // Act & Assert
@@ -143,19 +144,20 @@ class BookingServiceTest {
       bookingService.cancelBooking(bookingId);
     });
     verify(bookingRepository, times(1)).findById(bookingId);
-    verify(bookingRepository, times(0)).save(null);
   }
 
-  // Test: getBookingsOfCentre
   @Test
   @DisplayName("Should get all bookings of a centre successfully")
   void testGetBookingsOfCentreSuccess() {
     // Arrange
-    int centreId = 1;
+    Long centreId = 1L;
     List<Booking> bookings = new ArrayList<>();
-    bookings.add(new Booking(1, 1, 100, LocalDateTime.now(), BookingStatus.BOOKED));
-    bookings.add(new Booking(2, 2, 101, LocalDateTime.now(), BookingStatus.BOOKED));
-    bookings.add(new Booking(3, 3, 102, LocalDateTime.now(), BookingStatus.CANCELLED));
+    User user1 = createUser(100L, "John");
+    User user2 = createUser(101L, "Jane");
+    Slot slot1 = createSlot(1L);
+    Slot slot2 = createSlot(2L);
+    bookings.add(createBooking(1L, user1, slot1, BookingStatus.BOOKED));
+    bookings.add(createBooking(2L, user2, slot2, BookingStatus.BOOKED));
 
     when(bookingRepository.getBookingsByCentre(centreId)).thenReturn(bookings);
 
@@ -164,19 +166,15 @@ class BookingServiceTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals(3, result.size());
-    assertTrue(result.stream().anyMatch(b -> b.getId() == 1));
-    assertTrue(result.stream().anyMatch(b -> b.getId() == 2));
-    assertTrue(result.stream().anyMatch(b -> b.getId() == 3));
+    assertEquals(2, result.size());
     verify(bookingRepository, times(1)).getBookingsByCentre(centreId);
   }
 
-  // Test: getBookingsOfCentre with empty results
   @Test
   @DisplayName("Should return empty set when centre has no bookings")
   void testGetBookingsOfCentreEmpty() {
     // Arrange
-    int centreId = 999;
+    Long centreId = 999L;
     List<Booking> emptyList = new ArrayList<>();
 
     when(bookingRepository.getBookingsByCentre(centreId)).thenReturn(emptyList);
@@ -190,13 +188,14 @@ class BookingServiceTest {
     verify(bookingRepository, times(1)).getBookingsByCentre(centreId);
   }
 
-  // Test: getBooking by ID - found
   @Test
   @DisplayName("Should get booking by ID successfully")
   void testGetBookingSuccess() {
     // Arrange
-    int bookingId = 1;
-    Booking mockBooking = new Booking(bookingId, 1, 100, LocalDateTime.now(), BookingStatus.BOOKED);
+    Long bookingId = 1L;
+    User user = createUser(100L, "John");
+    Slot slot = createSlot(1L);
+    Booking mockBooking = createBooking(bookingId, user, slot, BookingStatus.BOOKED);
 
     when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
 
@@ -206,16 +205,14 @@ class BookingServiceTest {
     // Assert
     assertNotNull(result);
     assertEquals(bookingId, result.getId());
-    assertEquals(100, result.getBookedBy());
     verify(bookingRepository, times(1)).findById(bookingId);
   }
 
-  // Test: getBooking by ID - not found
   @Test
   @DisplayName("Should return null when booking ID does not exist")
   void testGetBookingNotFound() {
     // Arrange
-    int bookingId = 999;
+    Long bookingId = 999L;
     when(bookingRepository.findById(bookingId)).thenReturn(Optional.empty());
 
     // Act
@@ -226,16 +223,21 @@ class BookingServiceTest {
     verify(bookingRepository, times(1)).findById(bookingId);
   }
 
-  // Test: getBookings - return all bookings
   @Test
   @DisplayName("Should get all bookings successfully")
   void testGetAllBookingsSuccess() {
     // Arrange
     List<Booking> bookings = new ArrayList<>();
-    bookings.add(new Booking(1, 1, 100, LocalDateTime.now(), BookingStatus.BOOKED));
-    bookings.add(new Booking(2, 2, 101, LocalDateTime.now(), BookingStatus.BOOKED));
-    bookings.add(new Booking(3, 3, 102, LocalDateTime.now(), BookingStatus.CANCELLED));
-    bookings.add(new Booking(4, 4, 103, LocalDateTime.now(), BookingStatus.BOOKED));
+    User user1 = createUser(100L, "John");
+    User user2 = createUser(101L, "Jane");
+    Slot slot1 = createSlot(1L);
+    Slot slot2 = createSlot(2L);
+    Slot slot3 = createSlot(3L);
+    Slot slot4 = createSlot(4L);
+    bookings.add(createBooking(1L, user1, slot1, BookingStatus.BOOKED));
+    bookings.add(createBooking(2L, user2, slot2, BookingStatus.BOOKED));
+    bookings.add(createBooking(3L, user1, slot3, BookingStatus.CANCELLED));
+    bookings.add(createBooking(4L, user2, slot4, BookingStatus.BOOKED));
 
     when(bookingRepository.findAll()).thenReturn(bookings);
 
@@ -245,12 +247,9 @@ class BookingServiceTest {
     // Assert
     assertNotNull(result);
     assertEquals(4, result.size());
-    assertTrue(result.stream().anyMatch(b -> b.getId() == 1));
-    assertTrue(result.stream().anyMatch(b -> b.getId() == 4));
     verify(bookingRepository, times(1)).findAll();
   }
 
-  // Test: getBookings with empty results
   @Test
   @DisplayName("Should return empty set when no bookings exist")
   void testGetAllBookingsEmpty() {
@@ -267,15 +266,19 @@ class BookingServiceTest {
     verify(bookingRepository, times(1)).findAll();
   }
 
-  // Test: Multiple bookings with different statuses
   @Test
   @DisplayName("Should handle bookings with different statuses correctly")
   void testGetBookingsWithDifferentStatuses() {
     // Arrange
     List<Booking> bookings = new ArrayList<>();
-    bookings.add(new Booking(1, 1, 100, LocalDateTime.now(), BookingStatus.BOOKED));
-    bookings.add(new Booking(2, 2, 101, LocalDateTime.now(), BookingStatus.CANCELLED));
-    bookings.add(new Booking(3, 3, 102, LocalDateTime.now(), BookingStatus.BOOKED));
+    User user1 = createUser(100L, "John");
+    User user2 = createUser(101L, "Jane");
+    Slot slot1 = createSlot(1L);
+    Slot slot2 = createSlot(2L);
+    Slot slot3 = createSlot(3L);
+    bookings.add(createBooking(1L, user1, slot1, BookingStatus.BOOKED));
+    bookings.add(createBooking(2L, user2, slot2, BookingStatus.CANCELLED));
+    bookings.add(createBooking(3L, user1, slot3, BookingStatus.BOOKED));
 
     when(bookingRepository.findAll()).thenReturn(bookings);
 
@@ -292,26 +295,26 @@ class BookingServiceTest {
     verify(bookingRepository, times(1)).findAll();
   }
 
-  // Test: Sequential booking IDs
   @Test
-  @DisplayName("Should generate sequential booking IDs")
-  void testSequentialBookingIds() {
+  @DisplayName("Should get bookings by user")
+  void testGetBookingsByUser() {
     // Arrange
-    int slotId = 1;
-    int userId = 100;
-    Slot mockSlot = new Slot(slotId, LocalDate.now(), null, 9, 10, 5, 1);
+    Long userId = 100L;
+    List<Booking> bookings = new ArrayList<>();
+    User user = createUser(userId, "John");
+    Slot slot1 = createSlot(1L);
+    Slot slot2 = createSlot(2L);
+    bookings.add(createBooking(1L, user, slot1, BookingStatus.BOOKED));
+    bookings.add(createBooking(2L, user, slot2, BookingStatus.BOOKED));
 
-    when(sequenceGenerator.getNext("Booking")).thenReturn(1).thenReturn(2).thenReturn(3);
-    when(slotRepository.findById(slotId)).thenReturn(Optional.of(mockSlot));
-    when(bookingRepository.save(any(Booking.class))).thenReturn(new Booking(1, slotId, userId, LocalDateTime.now(), BookingStatus.BOOKED));
+    when(bookingRepository.getBookingsByUser(userId)).thenReturn(bookings);
 
     // Act
-    bookingService.addBooking(slotId, userId);
-    bookingService.addBooking(slotId, userId);
-    bookingService.addBooking(slotId, userId);
+    Set<Booking> result = bookingService.getBookingsByUser(userId);
 
     // Assert
-    verify(sequenceGenerator, times(3)).getNext("Booking");
-    verify(bookingRepository, times(3)).save(any(Booking.class));
+    assertNotNull(result);
+    assertEquals(2, result.size());
+    verify(bookingRepository, times(1)).getBookingsByUser(userId);
   }
 }

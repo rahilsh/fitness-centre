@@ -14,7 +14,6 @@ import com.rsh.fitness_centre.entity.FitnessCentre;
 import com.rsh.fitness_centre.entity.Slot;
 import com.rsh.fitness_centre.repository.FitnessCentreRepository;
 import com.rsh.fitness_centre.repository.SlotRepository;
-import com.rsh.fitness_centre.util.SequenceGenerator;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,68 +39,46 @@ class FitnessCentreServiceTest {
   @Mock
   private SlotRepository slotRepository;
 
-  @Mock
-  private SequenceGenerator sequenceGenerator;
-
   @BeforeEach
   void setUp() {
-    fitnessCentreService = new FitnessCentreService(sequenceGenerator, fitnessCentreRepository, slotRepository);
+    fitnessCentreService = new FitnessCentreService(fitnessCentreRepository, slotRepository);
   }
 
-  // Test: addCentre successfully
+  private FitnessCentre createCentre(Long id, String name) {
+    return new FitnessCentre(id, name);
+  }
+
+  private Slot createSlot(Long id, Activity activity, FitnessCentre centre) {
+    return new Slot(id, LocalDate.now(), activity, 9, 10, 20, centre);
+  }
+
   @Test
   @DisplayName("Should add fitness centre successfully")
   void testAddCentreSuccess() {
     // Arrange
     String centreName = "Gold Gym Downtown";
-    int centreId = 1;
     Set<List<Integer>> timings = new HashSet<>();
     Set<Activity> activities = new HashSet<>();
     
-    FitnessCentre expectedCentre = new FitnessCentre(centreId, centreName);
-
-    when(sequenceGenerator.getNext("FitnessCentre")).thenReturn(centreId);
-    when(fitnessCentreRepository.save(expectedCentre)).thenReturn(expectedCentre);
+    FitnessCentre expectedCentre = createCentre(1L, centreName);
+    when(fitnessCentreRepository.save(any(FitnessCentre.class))).thenReturn(expectedCentre);
 
     // Act
     FitnessCentre result = fitnessCentreService.addCentre(centreName, timings, activities);
 
     // Assert
     assertNotNull(result);
-    assertEquals(centreId, result.getId());
+    assertEquals(1L, result.getId());
     assertEquals(centreName, result.getName());
-    verify(sequenceGenerator, times(1)).getNext("FitnessCentre");
-    verify(fitnessCentreRepository, times(1)).save(result);
+    verify(fitnessCentreRepository, times(1)).save(any(FitnessCentre.class));
   }
 
-  // Test: addCentre with sequential IDs
-  @Test
-  @DisplayName("Should generate sequential centre IDs")
-  void testSequentialCentreIds() {
-    // Arrange
-    Set<List<Integer>> timings = new HashSet<>();
-    Set<Activity> activities = new HashSet<>();
-
-    when(sequenceGenerator.getNext("FitnessCentre")).thenReturn(1).thenReturn(2).thenReturn(3);
-    when(fitnessCentreRepository.save(any(FitnessCentre.class))).thenReturn(new FitnessCentre(1, "Gym 1"));
-
-    // Act
-    fitnessCentreService.addCentre("Gym 1", timings, activities);
-    fitnessCentreService.addCentre("Gym 2", timings, activities);
-    fitnessCentreService.addCentre("Gym 3", timings, activities);
-
-    // Assert
-    verify(sequenceGenerator, times(3)).getNext("FitnessCentre");
-    verify(fitnessCentreRepository, times(3)).save(any(FitnessCentre.class));
-  }
-
-  // Test: getCentreByName - found
   @Test
   @DisplayName("Should get centre by name successfully")
   void testGetCentreByNameSuccess() {
     // Arrange
     String centreName = "Gold Gym Downtown";
-    FitnessCentre mockCentre = new FitnessCentre(1, centreName);
+    FitnessCentre mockCentre = createCentre(1L, centreName);
 
     when(fitnessCentreRepository.findByName(centreName)).thenReturn(Optional.of(mockCentre));
 
@@ -110,17 +87,17 @@ class FitnessCentreServiceTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals(1, result.getId());
+    assertEquals(1L, result.getId());
     assertEquals(centreName, result.getName());
     verify(fitnessCentreRepository, times(1)).findByName(centreName);
   }
 
-  // Test: getCentreByName - not found
   @Test
   @DisplayName("Should return null when centre name does not exist")
   void testGetCentreByNameNotFound() {
     // Arrange
-    String centreName = "Non-Existent Gym";
+    String centreName = "Non-existent Gym";
+
     when(fitnessCentreRepository.findByName(centreName)).thenReturn(Optional.empty());
 
     // Act
@@ -131,114 +108,32 @@ class FitnessCentreServiceTest {
     verify(fitnessCentreRepository, times(1)).findByName(centreName);
   }
 
-  // Test: getSlotsOfADay successfully
   @Test
-  @DisplayName("Should get slots of a day successfully")
-  void testGetSlotsOfADaySuccess() {
+  @DisplayName("Should get centre by ID successfully")
+  void testGetCentreByIdSuccess() {
     // Arrange
-    int centreId = 1;
-    LocalDate date = LocalDate.of(2024, 6, 27);
-    List<Slot> slots = new ArrayList<>();
-    slots.add(new Slot(1, date, Activity.WEIGHTS, 9, 10, 5, centreId));
-    slots.add(new Slot(2, date, Activity.CARDIO, 10, 11, 5, centreId));
-    slots.add(new Slot(3, date, Activity.YOGA, 18, 19, 10, centreId));
+    Long centreId = 1L;
+    FitnessCentre mockCentre = createCentre(centreId, "Gold Gym");
 
-    when(slotRepository.getSlotsByDate(centreId, date)).thenReturn(slots);
+    when(fitnessCentreRepository.findById(centreId)).thenReturn(Optional.of(mockCentre));
 
     // Act
-    Set<Slot> result = fitnessCentreService.getSlotsOfADay(centreId, date);
+    FitnessCentre result = fitnessCentreService.getCentreById(centreId);
 
     // Assert
     assertNotNull(result);
-    assertEquals(3, result.size());
-    assertTrue(result.stream().anyMatch(s -> s.getId() == 1));
-    assertTrue(result.stream().anyMatch(s -> s.getId() == 2));
-    assertTrue(result.stream().anyMatch(s -> s.getId() == 3));
-    verify(slotRepository, times(1)).getSlotsByDate(centreId, date);
+    assertEquals(centreId, result.getId());
+    verify(fitnessCentreRepository, times(1)).findById(centreId);
   }
 
-  // Test: getSlotsOfADay with empty results
   @Test
-  @DisplayName("Should return empty set when centre has no slots on given date")
-  void testGetSlotsOfADayEmpty() {
-    // Arrange
-    int centreId = 1;
-    LocalDate date = LocalDate.of(2024, 1, 1);
-    List<Slot> emptyList = new ArrayList<>();
-
-    when(slotRepository.getSlotsByDate(centreId, date)).thenReturn(emptyList);
-
-    // Act
-    Set<Slot> result = fitnessCentreService.getSlotsOfADay(centreId, date);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(0, result.size());
-    verify(slotRepository, times(1)).getSlotsByDate(centreId, date);
-  }
-
-  // Test: addActivity successfully
-  @Test
-  @DisplayName("Should add activity (create slot) successfully")
-  void testAddActivitySuccess() {
-    // Arrange
-    int fitnessCentreId = 1;
-    Activity activity = Activity.WEIGHTS;
-    int startTime = 9;
-    int endTime = 10;
-    int noOfSlots = 5;
-    int slotId = 1;
-
-    Slot expectedSlot = new Slot(slotId, LocalDate.now(), activity, startTime, endTime, noOfSlots, fitnessCentreId);
-
-    when(sequenceGenerator.getNext("FitnessCentreSlot")).thenReturn(slotId);
-    when(slotRepository.save(expectedSlot)).thenReturn(expectedSlot);
-
-    // Act
-    Slot result = fitnessCentreService.addActivity(fitnessCentreId, activity, startTime, endTime, noOfSlots);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(slotId, result.getId());
-    assertEquals(activity, result.getActivity());
-    assertEquals(startTime, result.getStartTime());
-    assertEquals(endTime, result.getEndTime());
-    assertEquals(noOfSlots, result.getNoOfSeats());
-    assertEquals(fitnessCentreId, result.getFitnessCenterId());
-    verify(sequenceGenerator, times(1)).getNext("FitnessCentreSlot");
-    verify(slotRepository, times(1)).save(result);
-  }
-
-  // Test: addActivity with different activities
-  @Test
-  @DisplayName("Should add activities of different types")
-  void testAddActivityDifferentTypes() {
-    // Arrange
-    int fitnessCentreId = 1;
-    Activity[] activities = {Activity.WEIGHTS, Activity.CARDIO, Activity.YOGA, Activity.SWIMMING};
-    
-    when(sequenceGenerator.getNext("FitnessCentreSlot")).thenReturn(1).thenReturn(2).thenReturn(3).thenReturn(4);
-    when(slotRepository.save(any(Slot.class))).thenReturn(new Slot(1, LocalDate.now(), Activity.WEIGHTS, 9, 10, 5, fitnessCentreId));
-
-    // Act & Assert
-    for (Activity activity : activities) {
-      fitnessCentreService.addActivity(fitnessCentreId, activity, 9, 10, 5);
-    }
-    
-    verify(sequenceGenerator, times(4)).getNext("FitnessCentreSlot");
-    verify(slotRepository, times(4)).save(any(Slot.class));
-  }
-
-  // Test: getAllCentres successfully
-  @Test
-  @DisplayName("Should get all fitness centres successfully")
+  @DisplayName("Should get all centres successfully")
   void testGetAllCentresSuccess() {
     // Arrange
     List<FitnessCentre> centres = new ArrayList<>();
-    centres.add(new FitnessCentre(1, "Gold Gym"));
-    centres.add(new FitnessCentre(2, "FitX"));
-    centres.add(new FitnessCentre(3, "Wellness Center"));
-    centres.add(new FitnessCentre(4, "CrossFit Box"));
+    centres.add(createCentre(1L, "Gym A"));
+    centres.add(createCentre(2L, "Gym B"));
+    centres.add(createCentre(3L, "Gym C"));
 
     when(fitnessCentreRepository.findAll()).thenReturn(centres);
 
@@ -247,20 +142,16 @@ class FitnessCentreServiceTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals(4, result.size());
-    assertTrue(result.stream().anyMatch(c -> c.getId() == 1));
-    assertTrue(result.stream().anyMatch(c -> c.getId() == 2));
-    assertTrue(result.stream().anyMatch(c -> c.getId() == 3));
-    assertTrue(result.stream().anyMatch(c -> c.getId() == 4));
+    assertEquals(3, result.size());
     verify(fitnessCentreRepository, times(1)).findAll();
   }
 
-  // Test: getAllCentres with empty results
   @Test
-  @DisplayName("Should return empty set when no fitness centres exist")
+  @DisplayName("Should return empty set when no centres exist")
   void testGetAllCentresEmpty() {
     // Arrange
     List<FitnessCentre> emptyList = new ArrayList<>();
+
     when(fitnessCentreRepository.findAll()).thenReturn(emptyList);
 
     // Act
@@ -272,126 +163,159 @@ class FitnessCentreServiceTest {
     verify(fitnessCentreRepository, times(1)).findAll();
   }
 
-  // Test: getCentreActivities successfully
   @Test
-  @DisplayName("Should get all activities (slots) of a centre successfully")
+  @DisplayName("Should add activity successfully")
+  void testAddActivitySuccess() {
+    // Arrange
+    Long centreId = 1L;
+    FitnessCentre mockCentre = createCentre(centreId, "Gold Gym");
+    Slot expectedSlot = createSlot(1L, Activity.YOGA, mockCentre);
+
+    when(fitnessCentreRepository.findById(centreId)).thenReturn(Optional.of(mockCentre));
+    when(slotRepository.save(any(Slot.class))).thenReturn(expectedSlot);
+
+    // Act
+    Slot result = fitnessCentreService.addActivity(centreId, Activity.YOGA, 9, 10, 20);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(1L, result.getId());
+    assertEquals(Activity.YOGA, result.getActivity());
+    verify(fitnessCentreRepository, times(1)).findById(centreId);
+    verify(slotRepository, times(1)).save(any(Slot.class));
+  }
+
+  @Test
+  @DisplayName("Should return null when adding activity to non-existent centre")
+  void testAddActivityToNonExistentCentre() {
+    // Arrange
+    Long centreId = 999L;
+
+    when(fitnessCentreRepository.findById(centreId)).thenReturn(Optional.empty());
+
+    // Act
+    Slot result = fitnessCentreService.addActivity(centreId, Activity.YOGA, 9, 10, 20);
+
+    // Assert
+    assertNull(result);
+    verify(fitnessCentreRepository, times(1)).findById(centreId);
+  }
+
+  @Test
+  @DisplayName("Should get slots of a day successfully")
+  void testGetSlotsOfADaySuccess() {
+    // Arrange
+    Long centreId = 1L;
+    LocalDate date = LocalDate.now();
+    FitnessCentre centre = createCentre(centreId, "Gold Gym");
+    FitnessCentre centre2 = createCentre(1L, "Gold Gym");  // Need separate instances for assertEquals
+    List<Slot> slots = new ArrayList<>();
+    Slot slot1 = new Slot(1L, date, Activity.YOGA, 9, 10, 20, centre);
+    Slot slot2 = new Slot(2L, date, Activity.CARDIO, 10, 11, 25, centre2);
+    slots.add(slot1);
+    slots.add(slot2);
+
+    when(slotRepository.getSlotsByDate(centreId, date)).thenReturn(slots);
+
+    // Act
+    Set<Slot> result = fitnessCentreService.getSlotsOfADay(centreId, date);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(2, result.size());
+    verify(slotRepository, times(1)).getSlotsByDate(centreId, date);
+  }
+
+  @Test
+  @DisplayName("Should get centre activities successfully")
   void testGetCentreActivitiesSuccess() {
     // Arrange
-    int fitnessCentreId = 1;
+    Long centreId = 1L;
+    FitnessCentre centre = createCentre(centreId, "Gold Gym");
     List<Slot> slots = new ArrayList<>();
-    slots.add(new Slot(1, LocalDate.now(), Activity.WEIGHTS, 9, 10, 5, fitnessCentreId));
-    slots.add(new Slot(2, LocalDate.now(), Activity.CARDIO, 10, 11, 5, fitnessCentreId));
-    slots.add(new Slot(3, LocalDate.now().plusDays(1), Activity.YOGA, 18, 19, 10, fitnessCentreId));
-    slots.add(new Slot(4, LocalDate.now().plusDays(1), Activity.SWIMMING, 14, 15, 8, fitnessCentreId));
+    Slot slot1 = new Slot(1L, LocalDate.now(), Activity.YOGA, 9, 10, 20, centre);
+    Slot slot2 = new Slot(2L, LocalDate.now(), Activity.CARDIO, 10, 11, 25, centre);
+    Slot slot3 = new Slot(3L, LocalDate.now(), Activity.WEIGHTS, 8, 9, 15, centre);
+    slots.add(slot1);
+    slots.add(slot2);
+    slots.add(slot3);
 
-    when(slotRepository.getSlotsByCenter(fitnessCentreId)).thenReturn(slots);
-
-    // Act
-    Set<Slot> result = fitnessCentreService.getCentreActivities(fitnessCentreId);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(4, result.size());
-    assertTrue(result.stream().anyMatch(s -> s.getId() == 1));
-    assertTrue(result.stream().anyMatch(s -> s.getId() == 2));
-    assertTrue(result.stream().anyMatch(s -> s.getId() == 3));
-    assertTrue(result.stream().anyMatch(s -> s.getId() == 4));
-    verify(slotRepository, times(1)).getSlotsByCenter(fitnessCentreId);
-  }
-
-  // Test: getCentreActivities with multiple activity types
-  @Test
-  @DisplayName("Should get centre activities with different activity types")
-  void testGetCentreActivitiesMultipleTypes() {
-    // Arrange
-    int fitnessCentreId = 1;
-    List<Slot> slots = new ArrayList<>();
-    slots.add(new Slot(1, LocalDate.now(), Activity.WEIGHTS, 9, 10, 5, fitnessCentreId));
-    slots.add(new Slot(2, LocalDate.now(), Activity.CARDIO, 10, 11, 5, fitnessCentreId));
-    slots.add(new Slot(3, LocalDate.now(), Activity.YOGA, 18, 19, 10, fitnessCentreId));
-    slots.add(new Slot(4, LocalDate.now(), Activity.SWIMMING, 14, 15, 8, fitnessCentreId));
-
-    when(slotRepository.getSlotsByCenter(fitnessCentreId)).thenReturn(slots);
+    when(slotRepository.getSlotsByCenter(centreId)).thenReturn(slots);
 
     // Act
-    Set<Slot> result = fitnessCentreService.getCentreActivities(fitnessCentreId);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(4, result.size());
-    long weightsCount = result.stream().filter(s -> s.getActivity() == Activity.WEIGHTS).count();
-    long cardioCount = result.stream().filter(s -> s.getActivity() == Activity.CARDIO).count();
-    long yogaCount = result.stream().filter(s -> s.getActivity() == Activity.YOGA).count();
-    long swimmingCount = result.stream().filter(s -> s.getActivity() == Activity.SWIMMING).count();
-    assertEquals(1, weightsCount);
-    assertEquals(1, cardioCount);
-    assertEquals(1, yogaCount);
-    assertEquals(1, swimmingCount);
-    verify(slotRepository, times(1)).getSlotsByCenter(fitnessCentreId);
-  }
-
-  // Test: getCentreActivities with empty results
-  @Test
-  @DisplayName("Should return empty set when centre has no activities")
-  void testGetCentreActivitiesEmpty() {
-    // Arrange
-    int fitnessCentreId = 999;
-    List<Slot> emptyList = new ArrayList<>();
-
-    when(slotRepository.getSlotsByCenter(fitnessCentreId)).thenReturn(emptyList);
-
-    // Act
-    Set<Slot> result = fitnessCentreService.getCentreActivities(fitnessCentreId);
-
-    // Assert
-    assertNotNull(result);
-    assertEquals(0, result.size());
-    verify(slotRepository, times(1)).getSlotsByCenter(fitnessCentreId);
-  }
-
-  // Test: Multiple centres with different names
-  @Test
-  @DisplayName("Should handle multiple centres with different names")
-  void testMultipleCentresWithDifferentNames() {
-    // Arrange
-    List<FitnessCentre> centres = new ArrayList<>();
-    centres.add(new FitnessCentre(1, "Gold Gym"));
-    centres.add(new FitnessCentre(2, "FitX Premium"));
-    centres.add(new FitnessCentre(3, "Yoga Studio"));
-
-    when(fitnessCentreRepository.findAll()).thenReturn(centres);
-
-    // Act
-    Set<FitnessCentre> result = fitnessCentreService.getAllCentres();
+    Set<Slot> result = fitnessCentreService.getCentreActivities(centreId);
 
     // Assert
     assertNotNull(result);
     assertEquals(3, result.size());
-    assertTrue(result.stream().anyMatch(c -> c.getName().equals("Gold Gym")));
-    assertTrue(result.stream().anyMatch(c -> c.getName().equals("FitX Premium")));
-    assertTrue(result.stream().anyMatch(c -> c.getName().equals("Yoga Studio")));
+    verify(slotRepository, times(1)).getSlotsByCenter(centreId);
   }
 
-  // Test: addActivity with various time slots
   @Test
-  @DisplayName("Should add activities with various time slot configurations")
-  void testAddActivityVariousTimeSlots() {
+  @DisplayName("Should return empty set when centre has no activities")
+  void testGetCentreActivitiesEmpty() {
     // Arrange
-    int fitnessCentreId = 1;
-    Activity activity = Activity.WEIGHTS;
-    
-    // Test different time configurations
-    int[][] timeConfigs = {{6, 7}, {9, 10}, {12, 13}, {18, 19}, {20, 21}};
-    
-    when(sequenceGenerator.getNext("FitnessCentreSlot"))
-        .thenReturn(1).thenReturn(2).thenReturn(3).thenReturn(4).thenReturn(5);
-    when(slotRepository.save(any(Slot.class))).thenReturn(new Slot(1, LocalDate.now(), activity, 6, 7, 5, fitnessCentreId));
+    Long centreId = 999L;
+    List<Slot> emptyList = new ArrayList<>();
 
-    // Act & Assert
-    for (int i = 0; i < timeConfigs.length; i++) {
-      fitnessCentreService.addActivity(fitnessCentreId, activity, timeConfigs[i][0], timeConfigs[i][1], 5);
-    }
-    
-    verify(slotRepository, times(5)).save(any(Slot.class));
+    when(slotRepository.getSlotsByCenter(centreId)).thenReturn(emptyList);
+
+    // Act
+    Set<Slot> result = fitnessCentreService.getCentreActivities(centreId);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(0, result.size());
+    verify(slotRepository, times(1)).getSlotsByCenter(centreId);
+  }
+
+  @Test
+  @DisplayName("Should handle adding multiple activities with different types")
+  void testAddMultipleActivitiesWithDifferentTypes() {
+    // Arrange
+    Long centreId = 1L;
+    FitnessCentre mockCentre = createCentre(centreId, "Gold Gym");
+
+    when(fitnessCentreRepository.findById(centreId)).thenReturn(Optional.of(mockCentre));
+    when(slotRepository.save(any(Slot.class)))
+        .thenReturn(createSlot(1L, Activity.YOGA, mockCentre))
+        .thenReturn(createSlot(2L, Activity.CARDIO, mockCentre))
+        .thenReturn(createSlot(3L, Activity.WEIGHTS, mockCentre));
+
+    // Act
+    Slot yoga = fitnessCentreService.addActivity(centreId, Activity.YOGA, 9, 10, 20);
+    Slot cardio = fitnessCentreService.addActivity(centreId, Activity.CARDIO, 10, 11, 25);
+    Slot weights = fitnessCentreService.addActivity(centreId, Activity.WEIGHTS, 8, 9, 15);
+
+    // Assert
+    assertEquals(Activity.YOGA, yoga.getActivity());
+    assertEquals(Activity.CARDIO, cardio.getActivity());
+    assertEquals(Activity.WEIGHTS, weights.getActivity());
+    verify(fitnessCentreRepository, times(3)).findById(centreId);
+    verify(slotRepository, times(3)).save(any(Slot.class));
+  }
+
+  @Test
+  @DisplayName("Should verify service delegates to repositories correctly")
+  void testServiceDelegatesToRepositories() {
+    // Arrange
+    String centreName = "Test Gym";
+    FitnessCentre mockCentre = createCentre(1L, centreName);
+    Set<List<Integer>> timings = new HashSet<>();
+    Set<Activity> activities = new HashSet<>();
+
+    when(fitnessCentreRepository.save(any(FitnessCentre.class))).thenReturn(mockCentre);
+    when(fitnessCentreRepository.findByName(centreName)).thenReturn(Optional.of(mockCentre));
+    when(fitnessCentreRepository.findAll()).thenReturn(java.util.List.of(mockCentre));
+
+    // Act
+    fitnessCentreService.addCentre(centreName, timings, activities);
+    fitnessCentreService.getCentreByName(centreName);
+    fitnessCentreService.getAllCentres();
+
+    // Assert
+    verify(fitnessCentreRepository, times(1)).save(any(FitnessCentre.class));
+    verify(fitnessCentreRepository, times(1)).findByName(centreName);
+    verify(fitnessCentreRepository, times(1)).findAll();
   }
 }

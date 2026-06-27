@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 
 import com.rsh.fitness_centre.entity.Booking;
 import com.rsh.fitness_centre.entity.BookingStatus;
+import com.rsh.fitness_centre.entity.Slot;
+import com.rsh.fitness_centre.entity.User;
 import com.rsh.fitness_centre.entity.request.AddBookingRequest;
 import com.rsh.fitness_centre.exception.BookingNotFoundException;
 import com.rsh.fitness_centre.service.BookingService;
@@ -34,32 +36,49 @@ class BookingControllerTest {
     bookingController = new BookingController(bookingService);
   }
 
+  private User createUser(Long id, String name) {
+    return new User(id, name);
+  }
+
+  private Slot createSlot(Long id) {
+    return new Slot(id, null, null, 9, 10, 20, null);
+  }
+
+  private Booking createBooking(Long id, User user, Slot slot, BookingStatus status) {
+    Booking booking = new Booking(id, user, slot, null, status);
+    return booking;
+  }
+
   @Test
   @DisplayName("Should add booking successfully")
   void testAddBookingSuccess() {
     // Arrange
     AddBookingRequest request = new AddBookingRequest();
-    request.setSlotId(1);
-    request.setUserId(1);
-    Booking booking = new Booking(1, 1, 1, null, BookingStatus.BOOKED);
-    when(bookingService.addBooking(1, 1)).thenReturn(booking);
+    request.setSlotId(1L);
+    request.setUserId(1L);
+    User user = createUser(1L, "John");
+    Slot slot = createSlot(1L);
+    Booking booking = createBooking(1L, user, slot, BookingStatus.BOOKED);
+    when(bookingService.addBooking(1L, 1L)).thenReturn(booking);
 
     // Act
     Booking result = bookingController.addBooking(request);
 
     // Assert
     assertNotNull(result);
-    assertEquals(1, result.getId());
+    assertEquals(1L, result.getId());
     assertEquals(BookingStatus.BOOKED, result.getStatus());
-    verify(bookingService, times(1)).addBooking(1, 1);
+    verify(bookingService, times(1)).addBooking(1L, 1L);
   }
 
   @Test
   @DisplayName("Should cancel booking successfully")
   void testCancelBookingSuccess() {
     // Arrange
-    int bookingId = 1;
-    Booking booking = new Booking(bookingId, 1, 1, null, BookingStatus.CANCELLED);
+    Long bookingId = 1L;
+    User user = createUser(1L, "John");
+    Slot slot = createSlot(1L);
+    Booking booking = createBooking(bookingId, user, slot, BookingStatus.CANCELLED);
     when(bookingService.cancelBooking(bookingId)).thenReturn(booking);
 
     // Act
@@ -75,8 +94,10 @@ class BookingControllerTest {
   @DisplayName("Should get booking by ID successfully")
   void testGetBookingSuccess() {
     // Arrange
-    int bookingId = 1;
-    Booking booking = new Booking(bookingId, 1, 1, null, BookingStatus.BOOKED);
+    Long bookingId = 1L;
+    User user = createUser(1L, "John");
+    Slot slot = createSlot(1L);
+    Booking booking = createBooking(bookingId, user, slot, BookingStatus.BOOKED);
     when(bookingService.getBooking(bookingId)).thenReturn(booking);
 
     // Act
@@ -93,8 +114,8 @@ class BookingControllerTest {
   void testGetAllBookingsSuccess() {
     // Arrange
     Set<Booking> bookings = new HashSet<>();
-    bookings.add(new Booking(1, 1, 1, null, BookingStatus.BOOKED));
-    bookings.add(new Booking(2, 2, 2, null, BookingStatus.BOOKED));
+    bookings.add(createBooking(1L, createUser(1L, "John"), createSlot(1L), BookingStatus.BOOKED));
+    bookings.add(createBooking(2L, createUser(2L, "Jane"), createSlot(2L), BookingStatus.BOOKED));
     when(bookingService.getBookings()).thenReturn(bookings);
 
     // Act
@@ -110,7 +131,7 @@ class BookingControllerTest {
   @DisplayName("Should throw exception when cancelling non-existent booking")
   void testCancelBookingNotFound() {
     // Arrange
-    int bookingId = 999;
+    Long bookingId = 999L;
     when(bookingService.cancelBooking(bookingId))
         .thenThrow(new BookingNotFoundException("Invalid bookingId: " + bookingId));
 
@@ -127,7 +148,7 @@ class BookingControllerTest {
   @DisplayName("Should return null when getting non-existent booking")
   void testGetBookingNotFound() {
     // Arrange
-    int bookingId = 999;
+    Long bookingId = 999L;
     when(bookingService.getBooking(bookingId)).thenReturn(null);
 
     // Act
@@ -143,18 +164,20 @@ class BookingControllerTest {
   void testAddBookingWithDifferentIds() {
     // Arrange
     AddBookingRequest request = new AddBookingRequest();
-    request.setSlotId(5);
-    request.setUserId(10);
-    Booking booking = new Booking(1, 5, 10, null, BookingStatus.BOOKED);
-    when(bookingService.addBooking(5, 10)).thenReturn(booking);
+    request.setSlotId(5L);
+    request.setUserId(10L);
+    User user = createUser(10L, "Jane");
+    Slot slot = createSlot(5L);
+    Booking booking = createBooking(1L, user, slot, BookingStatus.BOOKED);
+    when(bookingService.addBooking(5L, 10L)).thenReturn(booking);
 
     // Act
     Booking result = bookingController.addBooking(request);
 
     // Assert
-    assertEquals(5, result.getSlotId());
-    assertEquals(10, result.getBookedBy());
-    verify(bookingService, times(1)).addBooking(5, 10);
+    assertEquals(5L, result.getSlot().getId());
+    assertEquals(10L, result.getUser().getId());
+    verify(bookingService, times(1)).addBooking(5L, 10L);
   }
 
   @Test
@@ -162,28 +185,28 @@ class BookingControllerTest {
   void testAddMultipleBookings() {
     // Arrange
     AddBookingRequest request1 = new AddBookingRequest();
-    request1.setSlotId(1);
-    request1.setUserId(1);
+    request1.setSlotId(1L);
+    request1.setUserId(1L);
 
     AddBookingRequest request2 = new AddBookingRequest();
-    request2.setSlotId(2);
-    request2.setUserId(2);
+    request2.setSlotId(2L);
+    request2.setUserId(2L);
 
-    Booking booking1 = new Booking(1, 1, 1, null, BookingStatus.BOOKED);
-    Booking booking2 = new Booking(2, 2, 2, null, BookingStatus.BOOKED);
+    Booking booking1 = createBooking(1L, createUser(1L, "John"), createSlot(1L), BookingStatus.BOOKED);
+    Booking booking2 = createBooking(2L, createUser(2L, "Jane"), createSlot(2L), BookingStatus.BOOKED);
 
-    when(bookingService.addBooking(1, 1)).thenReturn(booking1);
-    when(bookingService.addBooking(2, 2)).thenReturn(booking2);
+    when(bookingService.addBooking(1L, 1L)).thenReturn(booking1);
+    when(bookingService.addBooking(2L, 2L)).thenReturn(booking2);
 
     // Act
     Booking result1 = bookingController.addBooking(request1);
     Booking result2 = bookingController.addBooking(request2);
 
     // Assert
-    assertEquals(1, result1.getId());
-    assertEquals(2, result2.getId());
-    verify(bookingService, times(1)).addBooking(1, 1);
-    verify(bookingService, times(1)).addBooking(2, 2);
+    assertEquals(1L, result1.getId());
+    assertEquals(2L, result2.getId());
+    verify(bookingService, times(1)).addBooking(1L, 1L);
+    verify(bookingService, times(1)).addBooking(2L, 2L);
   }
 
   @Test
@@ -204,9 +227,11 @@ class BookingControllerTest {
   @DisplayName("Should handle booking status transitions")
   void testBookingStatusTransitions() {
     // Arrange
-    int bookingId = 1;
-    Booking bookedBooking = new Booking(bookingId, 1, 1, null, BookingStatus.BOOKED);
-    Booking cancelledBooking = new Booking(bookingId, 1, 1, null, BookingStatus.CANCELLED);
+    Long bookingId = 1L;
+    User user = createUser(1L, "John");
+    Slot slot = createSlot(1L);
+    Booking bookedBooking = createBooking(bookingId, user, slot, BookingStatus.BOOKED);
+    Booking cancelledBooking = createBooking(bookingId, user, slot, BookingStatus.CANCELLED);
 
     when(bookingService.getBooking(bookingId)).thenReturn(bookedBooking);
     when(bookingService.cancelBooking(bookingId)).thenReturn(cancelledBooking);

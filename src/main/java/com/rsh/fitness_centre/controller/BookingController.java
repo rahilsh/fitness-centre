@@ -52,7 +52,7 @@ public class BookingController {
       @ApiResponse(responseCode = "404", description = "Booking not found")
   })
   public Booking cancelBooking(
-      @Parameter(description = "Booking ID") @PathVariable int bookingId) {
+      @Parameter(description = "Booking ID") @PathVariable Long bookingId) {
     return bookingService.cancelBooking(bookingId);
   }
 
@@ -64,7 +64,7 @@ public class BookingController {
       @ApiResponse(responseCode = "404", description = "Booking not found")
   })
   public Booking getBooking(
-      @Parameter(description = "Booking ID") @PathVariable int bookingId) {
+      @Parameter(description = "Booking ID") @PathVariable Long bookingId) {
     return bookingService.getBooking(bookingId);
   }
 

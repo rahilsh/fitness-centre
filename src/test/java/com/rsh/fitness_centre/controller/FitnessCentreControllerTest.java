@@ -36,6 +36,14 @@ class FitnessCentreControllerTest {
     fitnessCentreController = new FitnessCentreController(fitnessCentreService);
   }
 
+  private FitnessCentre createCentre(Long id, String name) {
+    return new FitnessCentre(id, name);
+  }
+
+  private Slot createSlot(Long id, LocalDate date, Activity activity, int startTime, int endTime, int seats, FitnessCentre centre) {
+    return new Slot(id, date, activity, startTime, endTime, seats, centre);
+  }
+
   @Test
   @DisplayName("Should add fitness centre successfully")
   void testAddFitnessCentreSuccess() {
@@ -45,7 +53,7 @@ class FitnessCentreControllerTest {
     request.setTimings(new HashSet<>());
     request.setSupportedActivities(new HashSet<>());
 
-    FitnessCentre centre = new FitnessCentre(1, "Gold's Gym");
+    FitnessCentre centre = createCentre(1L, "Gold's Gym");
     when(fitnessCentreService.addCentre("Gold's Gym", new HashSet<>(), new HashSet<>()))
         .thenReturn(centre);
 
@@ -54,7 +62,7 @@ class FitnessCentreControllerTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals(1, result.getId());
+    assertEquals(1L, result.getId());
     assertEquals("Gold's Gym", result.getName());
     verify(fitnessCentreService, times(1))
         .addCentre("Gold's Gym", new HashSet<>(), new HashSet<>());
@@ -64,15 +72,15 @@ class FitnessCentreControllerTest {
   @DisplayName("Should add activity to fitness centre successfully")
   void testAddActivitySuccess() {
     // Arrange
-    int centreId = 1;
+    Long centreId = 1L;
     AddActivityRequest request = new AddActivityRequest();
-    request.setFitnessCentreId(centreId);
     request.setActivity(Activity.YOGA);
     request.setStartTime(9);
     request.setEndTime(10);
     request.setNoOfSlots(10);
 
-    Slot slot = new Slot(1, LocalDate.now(), Activity.YOGA, 9, 10, 10, centreId);
+    FitnessCentre centre = createCentre(centreId, "Gold's Gym");
+    Slot slot = createSlot(1L, LocalDate.now(), Activity.YOGA, 9, 10, 10, centre);
     when(fitnessCentreService.addActivity(centreId, Activity.YOGA, 9, 10, 10))
         .thenReturn(slot);
 
@@ -81,7 +89,7 @@ class FitnessCentreControllerTest {
 
     // Assert
     assertNotNull(result);
-    assertEquals(1, result.getId());
+    assertEquals(1L, result.getId());
     assertEquals(Activity.YOGA, result.getActivity());
     verify(fitnessCentreService, times(1)).addActivity(centreId, Activity.YOGA, 9, 10, 10);
   }
@@ -90,10 +98,11 @@ class FitnessCentreControllerTest {
   @DisplayName("Should get activities of fitness centre successfully")
   void testGetActivitiesSuccess() {
     // Arrange
-    int centreId = 1;
+    Long centreId = 1L;
+    FitnessCentre centre = createCentre(centreId, "Gold's Gym");
     Set<Slot> slots = new HashSet<>();
-    slots.add(new Slot(1, LocalDate.now(), Activity.YOGA, 9, 10, 10, centreId));
-    slots.add(new Slot(2, LocalDate.now(), Activity.CARDIO, 10, 11, 20, centreId));
+    slots.add(createSlot(1L, LocalDate.now(), Activity.YOGA, 9, 10, 10, centre));
+    slots.add(createSlot(2L, LocalDate.now(), Activity.CARDIO, 10, 11, 20, centre));
     when(fitnessCentreService.getCentreActivities(centreId)).thenReturn(slots);
 
     // Act
@@ -109,7 +118,7 @@ class FitnessCentreControllerTest {
   @DisplayName("Should return empty set when centre has no activities")
   void testGetActivitiesEmpty() {
     // Arrange
-    int centreId = 999;
+    Long centreId = 999L;
     when(fitnessCentreService.getCentreActivities(centreId)).thenReturn(new HashSet<>());
 
     // Act
@@ -130,7 +139,7 @@ class FitnessCentreControllerTest {
     request.setTimings(new HashSet<>());
     request.setSupportedActivities(new HashSet<>());
 
-    FitnessCentre centre = new FitnessCentre(2, "Gym@#$%");
+    FitnessCentre centre = createCentre(2L, "Gym@#$%");
     when(fitnessCentreService.addCentre("Gym@#$%", new HashSet<>(), new HashSet<>()))
         .thenReturn(centre);
 
@@ -145,17 +154,17 @@ class FitnessCentreControllerTest {
   @DisplayName("Should add activity with all workout types")
   void testAddActivityWithDifferentTypes() {
     // Arrange
-    int centreId = 1;
+    Long centreId = 1L;
+    FitnessCentre centre = createCentre(centreId, "Gold's Gym");
 
     // Test WEIGHTS
     AddActivityRequest weightsRequest = new AddActivityRequest();
-    weightsRequest.setFitnessCentreId(centreId);
     weightsRequest.setActivity(Activity.WEIGHTS);
     weightsRequest.setStartTime(8);
     weightsRequest.setEndTime(9);
     weightsRequest.setNoOfSlots(15);
 
-    Slot weightsSlot = new Slot(1, LocalDate.now(), Activity.WEIGHTS, 8, 9, 15, centreId);
+    Slot weightsSlot = createSlot(1L, LocalDate.now(), Activity.WEIGHTS, 8, 9, 15, centre);
     when(fitnessCentreService.addActivity(centreId, Activity.WEIGHTS, 8, 9, 15))
         .thenReturn(weightsSlot);
 
@@ -170,24 +179,23 @@ class FitnessCentreControllerTest {
   @DisplayName("Should add multiple activities to the same centre")
   void testAddMultipleActivities() {
     // Arrange
-    int centreId = 1;
+    Long centreId = 1L;
+    FitnessCentre centre = createCentre(centreId, "Gold's Gym");
 
     AddActivityRequest request1 = new AddActivityRequest();
-    request1.setFitnessCentreId(centreId);
     request1.setActivity(Activity.YOGA);
     request1.setStartTime(9);
     request1.setEndTime(10);
     request1.setNoOfSlots(10);
 
     AddActivityRequest request2 = new AddActivityRequest();
-    request2.setFitnessCentreId(centreId);
     request2.setActivity(Activity.CARDIO);
     request2.setStartTime(10);
     request2.setEndTime(11);
     request2.setNoOfSlots(20);
 
-    Slot slot1 = new Slot(1, LocalDate.now(), Activity.YOGA, 9, 10, 10, centreId);
-    Slot slot2 = new Slot(2, LocalDate.now(), Activity.CARDIO, 10, 11, 20, centreId);
+    Slot slot1 = createSlot(1L, LocalDate.now(), Activity.YOGA, 9, 10, 10, centre);
+    Slot slot2 = createSlot(2L, LocalDate.now(), Activity.CARDIO, 10, 11, 20, centre);
 
     when(fitnessCentreService.addActivity(centreId, Activity.YOGA, 9, 10, 10))
         .thenReturn(slot1);
@@ -199,8 +207,8 @@ class FitnessCentreControllerTest {
     Slot result2 = fitnessCentreController.addActivity(request2, centreId);
 
     // Assert
-    assertEquals(1, result1.getId());
-    assertEquals(2, result2.getId());
+    assertEquals(1L, result1.getId());
+    assertEquals(2L, result2.getId());
     verify(fitnessCentreService, times(1)).addActivity(centreId, Activity.YOGA, 9, 10, 10);
     verify(fitnessCentreService, times(1)).addActivity(centreId, Activity.CARDIO, 10, 11, 20);
   }
@@ -209,15 +217,15 @@ class FitnessCentreControllerTest {
   @DisplayName("Should handle activity with boundary time values")
   void testAddActivityWithBoundaryTimes() {
     // Arrange
-    int centreId = 1;
+    Long centreId = 1L;
+    FitnessCentre centre = createCentre(centreId, "Gold's Gym");
     AddActivityRequest request = new AddActivityRequest();
-    request.setFitnessCentreId(centreId);
     request.setActivity(Activity.YOGA);
     request.setStartTime(0);
     request.setEndTime(23);
     request.setNoOfSlots(1);
 
-    Slot slot = new Slot(1, LocalDate.now(), Activity.YOGA, 0, 23, 1, centreId);
+    Slot slot = createSlot(1L, LocalDate.now(), Activity.YOGA, 0, 23, 1, centre);
     when(fitnessCentreService.addActivity(centreId, Activity.YOGA, 0, 23, 1))
         .thenReturn(slot);
 
@@ -238,7 +246,7 @@ class FitnessCentreControllerTest {
     request.setTimings(new HashSet<>());
     request.setSupportedActivities(new HashSet<>());
 
-    FitnessCentre centre = new FitnessCentre(5, "Test Gym");
+    FitnessCentre centre = createCentre(5L, "Test Gym");
     when(fitnessCentreService.addCentre("Test Gym", new HashSet<>(), new HashSet<>()))
         .thenReturn(centre);
 

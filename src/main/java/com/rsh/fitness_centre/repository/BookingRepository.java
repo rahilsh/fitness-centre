@@ -8,11 +8,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface BookingRepository extends JpaRepository<Booking, Integer> {
+public interface BookingRepository extends JpaRepository<Booking, Long> {
   
-  @Query("SELECT b FROM Booking b WHERE b.bookedBy = :userId")
-  List<Booking> getBookingsByUser(@Param("userId") int userId);
+  @Query("SELECT b FROM Booking b WHERE b.user.id = :userId")
+  List<Booking> getBookingsByUser(@Param("userId") Long userId);
   
-  @Query("SELECT b FROM Booking b WHERE b.slotId IN (SELECT s.id FROM Slot s WHERE s.fitnessCenterId = :centreId)")
-  List<Booking> getBookingsByCentre(@Param("centreId") int centreId);
+  @Query("SELECT b FROM Booking b WHERE b.slot.fitnessCentre.id = :centreId")
+  List<Booking> getBookingsByCentre(@Param("centreId") Long centreId);
 }

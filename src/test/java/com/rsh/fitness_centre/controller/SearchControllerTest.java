@@ -11,6 +11,7 @@ import com.rsh.fitness_centre.entity.Booking;
 import com.rsh.fitness_centre.entity.BookingStatus;
 import com.rsh.fitness_centre.entity.FitnessCentre;
 import com.rsh.fitness_centre.entity.Slot;
+import com.rsh.fitness_centre.entity.User;
 import com.rsh.fitness_centre.entity.request.SearchActivityRequest;
 import com.rsh.fitness_centre.service.BookingService;
 import com.rsh.fitness_centre.service.FitnessCentreService;
@@ -41,6 +42,20 @@ class SearchControllerTest {
     searchController = new SearchController(bookingService, fitnessCentreService);
   }
 
+  private FitnessCentre createCentre(Long id, String name) {
+    return new FitnessCentre(id, name);
+  }
+
+  private Slot createSlot(Long id, LocalDate date, Activity activity, int startTime, int endTime, int seats, FitnessCentre centre) {
+    return new Slot(id, date, activity, startTime, endTime, seats, centre);
+  }
+
+  private Booking createBooking(Long slotId, Long userId, BookingStatus status) {
+    Slot slot = new Slot(slotId, LocalDate.now(), null, 0, 0, 0, null);
+    User user = new User(userId, "Test");
+    return new Booking(1L, user, slot, null, status);
+  }
+
   @Test
   @DisplayName("Should search activities by fitness centre name")
   void testSearchActivitiesByFitnessCentreName() {
@@ -49,14 +64,14 @@ class SearchControllerTest {
     request.setActivity("YOGA");
     request.setFitnessCentreName("Gold's Gym");
 
-    FitnessCentre centre = new FitnessCentre(1, "Gold's Gym");
+    FitnessCentre centre = createCentre(1L, "Gold's Gym");
     Set<Slot> slots = new HashSet<>();
-    slots.add(new Slot(1, LocalDate.now(), Activity.YOGA, 9, 10, 10, 1));
+    slots.add(createSlot(1L, LocalDate.now(), Activity.YOGA, 9, 10, 10, centre));
     Set<Booking> bookings = new HashSet<>();
 
     when(fitnessCentreService.getCentreByName("Gold's Gym")).thenReturn(centre);
-    when(fitnessCentreService.getSlotsOfADay(1, LocalDate.now())).thenReturn(slots);
-    when(bookingService.getBookingsOfCentre(1)).thenReturn(bookings);
+    when(fitnessCentreService.getSlotsOfADay(1L, LocalDate.now())).thenReturn(slots);
+    when(bookingService.getBookingsOfCentre(1L)).thenReturn(bookings);
 
     // Act
     Set<Slot> result = searchController.searchActivities(request);
@@ -74,22 +89,22 @@ class SearchControllerTest {
     request.setActivity("CARDIO");
     request.setFitnessCentreName(null);
 
-    FitnessCentre centre1 = new FitnessCentre(1, "Gym A");
-    FitnessCentre centre2 = new FitnessCentre(2, "Gym B");
+    FitnessCentre centre1 = createCentre(1L, "Gym A");
+    FitnessCentre centre2 = createCentre(2L, "Gym B");
     Set<FitnessCentre> centres = new HashSet<>();
     centres.add(centre1);
     centres.add(centre2);
 
     Set<Slot> slotsA = new HashSet<>();
-    slotsA.add(new Slot(1, LocalDate.now(), Activity.CARDIO, 10, 11, 20, 1));
+    slotsA.add(createSlot(1L, LocalDate.now(), Activity.CARDIO, 10, 11, 20, centre1));
     Set<Slot> slotsB = new HashSet<>();
-    slotsB.add(new Slot(2, LocalDate.now(), Activity.CARDIO, 15, 16, 25, 2));
+    slotsB.add(createSlot(2L, LocalDate.now(), Activity.CARDIO, 15, 16, 25, centre2));
 
     when(fitnessCentreService.getAllCentres()).thenReturn(centres);
-    when(fitnessCentreService.getSlotsOfADay(1, LocalDate.now())).thenReturn(slotsA);
-    when(fitnessCentreService.getSlotsOfADay(2, LocalDate.now())).thenReturn(slotsB);
-    when(bookingService.getBookingsOfCentre(1)).thenReturn(new HashSet<>());
-    when(bookingService.getBookingsOfCentre(2)).thenReturn(new HashSet<>());
+    when(fitnessCentreService.getSlotsOfADay(1L, LocalDate.now())).thenReturn(slotsA);
+    when(fitnessCentreService.getSlotsOfADay(2L, LocalDate.now())).thenReturn(slotsB);
+    when(bookingService.getBookingsOfCentre(1L)).thenReturn(new HashSet<>());
+    when(bookingService.getBookingsOfCentre(2L)).thenReturn(new HashSet<>());
 
     // Act
     Set<Slot> result = searchController.searchActivities(request);
@@ -126,22 +141,22 @@ class SearchControllerTest {
     request.setActivity("WEIGHTS");
     request.setFitnessCentreName("");
 
-    FitnessCentre centre1 = new FitnessCentre(1, "Gym A");
-    FitnessCentre centre2 = new FitnessCentre(2, "Gym B");
+    FitnessCentre centre1 = createCentre(1L, "Gym A");
+    FitnessCentre centre2 = createCentre(2L, "Gym B");
     Set<FitnessCentre> centres = new HashSet<>();
     centres.add(centre1);
     centres.add(centre2);
 
     Set<Slot> slotsA = new HashSet<>();
-    slotsA.add(new Slot(1, LocalDate.now(), Activity.WEIGHTS, 8, 9, 15, 1));
+    slotsA.add(createSlot(1L, LocalDate.now(), Activity.WEIGHTS, 8, 9, 15, centre1));
     Set<Slot> slotsB = new HashSet<>();
-    slotsB.add(new Slot(2, LocalDate.now(), Activity.WEIGHTS, 17, 18, 20, 2));
+    slotsB.add(createSlot(2L, LocalDate.now(), Activity.WEIGHTS, 17, 18, 20, centre2));
 
     when(fitnessCentreService.getAllCentres()).thenReturn(centres);
-    when(fitnessCentreService.getSlotsOfADay(1, LocalDate.now())).thenReturn(slotsA);
-    when(fitnessCentreService.getSlotsOfADay(2, LocalDate.now())).thenReturn(slotsB);
-    when(bookingService.getBookingsOfCentre(1)).thenReturn(new HashSet<>());
-    when(bookingService.getBookingsOfCentre(2)).thenReturn(new HashSet<>());
+    when(fitnessCentreService.getSlotsOfADay(1L, LocalDate.now())).thenReturn(slotsA);
+    when(fitnessCentreService.getSlotsOfADay(2L, LocalDate.now())).thenReturn(slotsB);
+    when(bookingService.getBookingsOfCentre(1L)).thenReturn(new HashSet<>());
+    when(bookingService.getBookingsOfCentre(2L)).thenReturn(new HashSet<>());
 
     // Act
     Set<Slot> result = searchController.searchActivities(request);
@@ -159,17 +174,19 @@ class SearchControllerTest {
     request.setActivity("YOGA");
     request.setFitnessCentreName("Gold's Gym");
 
-    FitnessCentre centre = new FitnessCentre(1, "Gold's Gym");
+    FitnessCentre centre = createCentre(1L, "Gold's Gym");
     Set<Slot> slots = new HashSet<>();
-    slots.add(new Slot(1, LocalDate.now(), Activity.YOGA, 9, 10, 10, 1));
-    slots.add(new Slot(2, LocalDate.now(), Activity.YOGA, 10, 11, 10, 1));
+    Slot slot1 = createSlot(1L, LocalDate.now(), Activity.YOGA, 9, 10, 10, centre);
+    Slot slot2 = createSlot(2L, LocalDate.now(), Activity.YOGA, 10, 11, 10, centre);
+    slots.add(slot1);
+    slots.add(slot2);
 
     Set<Booking> bookings = new HashSet<>();
-    bookings.add(new Booking(1, 1, 1, null, BookingStatus.BOOKED));
+    bookings.add(createBooking(1L, 1L, BookingStatus.BOOKED));
 
     when(fitnessCentreService.getCentreByName("Gold's Gym")).thenReturn(centre);
-    when(fitnessCentreService.getSlotsOfADay(1, LocalDate.now())).thenReturn(slots);
-    when(bookingService.getBookingsOfCentre(1)).thenReturn(bookings);
+    when(fitnessCentreService.getSlotsOfADay(1L, LocalDate.now())).thenReturn(slots);
+    when(bookingService.getBookingsOfCentre(1L)).thenReturn(bookings);
 
     // Act
     Set<Slot> result = searchController.searchActivities(request);
@@ -177,7 +194,7 @@ class SearchControllerTest {
     // Assert
     assertNotNull(result);
     verify(fitnessCentreService, times(1)).getCentreByName("Gold's Gym");
-    verify(bookingService, times(1)).getBookingsOfCentre(1);
+    verify(bookingService, times(1)).getBookingsOfCentre(1L);
   }
 
   @Test
@@ -188,13 +205,13 @@ class SearchControllerTest {
     swimmingRequest.setActivity("SWIMMING");
     swimmingRequest.setFitnessCentreName("Pool Gym");
 
-    FitnessCentre poolGym = new FitnessCentre(3, "Pool Gym");
+    FitnessCentre poolGym = createCentre(3L, "Pool Gym");
     Set<Slot> poolSlots = new HashSet<>();
-    poolSlots.add(new Slot(3, LocalDate.now(), Activity.SWIMMING, 14, 15, 25, 3));
+    poolSlots.add(createSlot(3L, LocalDate.now(), Activity.SWIMMING, 14, 15, 25, poolGym));
 
     when(fitnessCentreService.getCentreByName("Pool Gym")).thenReturn(poolGym);
-    when(fitnessCentreService.getSlotsOfADay(3, LocalDate.now())).thenReturn(poolSlots);
-    when(bookingService.getBookingsOfCentre(3)).thenReturn(new HashSet<>());
+    when(fitnessCentreService.getSlotsOfADay(3L, LocalDate.now())).thenReturn(poolSlots);
+    when(bookingService.getBookingsOfCentre(3L)).thenReturn(new HashSet<>());
 
     // Act
     Set<Slot> result = searchController.searchActivities(swimmingRequest);
@@ -212,16 +229,16 @@ class SearchControllerTest {
     request.setActivity("CARDIO");
     request.setFitnessCentreName("Cardio King");
 
-    FitnessCentre centre = new FitnessCentre(4, "Cardio King");
+    FitnessCentre centre = createCentre(4L, "Cardio King");
     Set<Slot> slots = new HashSet<>();
-    slots.add(new Slot(1, LocalDate.now(), Activity.CARDIO, 6, 7, 30, 4));
-    slots.add(new Slot(2, LocalDate.now(), Activity.CARDIO, 7, 8, 30, 4));
-    slots.add(new Slot(3, LocalDate.now(), Activity.CARDIO, 18, 19, 30, 4));
-    slots.add(new Slot(4, LocalDate.now(), Activity.CARDIO, 19, 20, 30, 4));
+    slots.add(createSlot(1L, LocalDate.now(), Activity.CARDIO, 6, 7, 30, centre));
+    slots.add(createSlot(2L, LocalDate.now(), Activity.CARDIO, 7, 8, 30, centre));
+    slots.add(createSlot(3L, LocalDate.now(), Activity.CARDIO, 18, 19, 30, centre));
+    slots.add(createSlot(4L, LocalDate.now(), Activity.CARDIO, 19, 20, 30, centre));
 
     when(fitnessCentreService.getCentreByName("Cardio King")).thenReturn(centre);
-    when(fitnessCentreService.getSlotsOfADay(4, LocalDate.now())).thenReturn(slots);
-    when(bookingService.getBookingsOfCentre(4)).thenReturn(new HashSet<>());
+    when(fitnessCentreService.getSlotsOfADay(4L, LocalDate.now())).thenReturn(slots);
+    when(bookingService.getBookingsOfCentre(4L)).thenReturn(new HashSet<>());
 
     // Act
     Set<Slot> result = searchController.searchActivities(request);
@@ -239,28 +256,28 @@ class SearchControllerTest {
     request.setActivity("YOGA");
     request.setFitnessCentreName(null);
 
-    FitnessCentre centre1 = new FitnessCentre(1, "Yoga Studio 1");
-    FitnessCentre centre2 = new FitnessCentre(2, "Yoga Studio 2");
-    FitnessCentre centre3 = new FitnessCentre(3, "Yoga Studio 3");
+    FitnessCentre centre1 = createCentre(1L, "Yoga Studio 1");
+    FitnessCentre centre2 = createCentre(2L, "Yoga Studio 2");
+    FitnessCentre centre3 = createCentre(3L, "Yoga Studio 3");
     Set<FitnessCentre> centres = new HashSet<>();
     centres.add(centre1);
     centres.add(centre2);
     centres.add(centre3);
 
     Set<Slot> slots1 = new HashSet<>();
-    slots1.add(new Slot(1, LocalDate.now(), Activity.YOGA, 9, 10, 15, 1));
+    slots1.add(createSlot(1L, LocalDate.now(), Activity.YOGA, 9, 10, 15, centre1));
     Set<Slot> slots2 = new HashSet<>();
-    slots2.add(new Slot(2, LocalDate.now(), Activity.YOGA, 10, 11, 15, 2));
+    slots2.add(createSlot(2L, LocalDate.now(), Activity.YOGA, 10, 11, 15, centre2));
     Set<Slot> slots3 = new HashSet<>();
-    slots3.add(new Slot(3, LocalDate.now(), Activity.YOGA, 16, 17, 15, 3));
+    slots3.add(createSlot(3L, LocalDate.now(), Activity.YOGA, 16, 17, 15, centre3));
 
     when(fitnessCentreService.getAllCentres()).thenReturn(centres);
-    when(fitnessCentreService.getSlotsOfADay(1, LocalDate.now())).thenReturn(slots1);
-    when(fitnessCentreService.getSlotsOfADay(2, LocalDate.now())).thenReturn(slots2);
-    when(fitnessCentreService.getSlotsOfADay(3, LocalDate.now())).thenReturn(slots3);
-    when(bookingService.getBookingsOfCentre(1)).thenReturn(new HashSet<>());
-    when(bookingService.getBookingsOfCentre(2)).thenReturn(new HashSet<>());
-    when(bookingService.getBookingsOfCentre(3)).thenReturn(new HashSet<>());
+    when(fitnessCentreService.getSlotsOfADay(1L, LocalDate.now())).thenReturn(slots1);
+    when(fitnessCentreService.getSlotsOfADay(2L, LocalDate.now())).thenReturn(slots2);
+    when(fitnessCentreService.getSlotsOfADay(3L, LocalDate.now())).thenReturn(slots3);
+    when(bookingService.getBookingsOfCentre(1L)).thenReturn(new HashSet<>());
+    when(bookingService.getBookingsOfCentre(2L)).thenReturn(new HashSet<>());
+    when(bookingService.getBookingsOfCentre(3L)).thenReturn(new HashSet<>());
 
     // Act
     Set<Slot> result = searchController.searchActivities(request);
@@ -278,13 +295,13 @@ class SearchControllerTest {
     request.setActivity("YOGA");
     request.setFitnessCentreName("Test Gym");
 
-    FitnessCentre centre = new FitnessCentre(1, "Test Gym");
+    FitnessCentre centre = createCentre(1L, "Test Gym");
     Set<Slot> slots = new HashSet<>();
-    slots.add(new Slot(1, LocalDate.now(), Activity.YOGA, 9, 10, 10, 1));
+    slots.add(createSlot(1L, LocalDate.now(), Activity.YOGA, 9, 10, 10, centre));
 
     when(fitnessCentreService.getCentreByName("Test Gym")).thenReturn(centre);
-    when(fitnessCentreService.getSlotsOfADay(1, LocalDate.now())).thenReturn(slots);
-    when(bookingService.getBookingsOfCentre(1)).thenReturn(new HashSet<>());
+    when(fitnessCentreService.getSlotsOfADay(1L, LocalDate.now())).thenReturn(slots);
+    when(bookingService.getBookingsOfCentre(1L)).thenReturn(new HashSet<>());
 
     // Act
     Set<Slot> result = searchController.searchActivities(request);

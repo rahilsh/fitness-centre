@@ -2,9 +2,12 @@ package com.rsh.fitness_centre.entity;
 
 import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,35 +18,50 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Getter
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 @Schema(description = "Booking of an activity slot")
 public class Booking {
 
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Schema(description = "Unique booking identifier", example = "1")
-  private int id;
-  
-  @Schema(description = "ID of the booked slot", example = "1")
-  private int slotId;
-  
-  @Schema(description = "ID of the user who made the booking", example = "1")
-  private int bookedBy;
-  
+  private Long id;
+
+  @CreatedDate
+  @Column(nullable = false, updatable = false)
   @Schema(description = "Timestamp when the booking was made", example = "2024-06-27T10:30:00")
   private LocalDateTime bookedAt;
 
+  @LastModifiedDate
+  @Column(nullable = false)
+  @Schema(description = "Timestamp when the booking was last modified")
+  private LocalDateTime updatedAt;
+
   @Setter
   @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   @Schema(description = "Current status of the booking", example = "CONFIRMED")
   private BookingStatus status;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "slot_id", nullable = false)
+  private Slot slot;
   
-  public Booking(int id, int slotId, int bookedBy, LocalDateTime bookedAt, BookingStatus status) {
+  public Booking(Long id, User user, Slot slot, LocalDateTime bookedAt, BookingStatus status) {
     this.id = id;
-    this.slotId = slotId;
-    this.bookedBy = bookedBy;
+    this.user = user;
+    this.slot = slot;
     this.bookedAt = bookedAt;
     this.status = status;
   }
@@ -57,7 +75,7 @@ public class Booking {
       return false;
     }
     Booking booking = (Booking) o;
-    return id == booking.id;
+    return Objects.equal(id, booking.id);
   }
 
   @Override

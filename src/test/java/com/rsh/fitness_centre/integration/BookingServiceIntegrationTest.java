@@ -8,13 +8,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.rsh.fitness_centre.entity.Activity;
 import com.rsh.fitness_centre.entity.Booking;
 import com.rsh.fitness_centre.entity.BookingStatus;
+import com.rsh.fitness_centre.entity.FitnessCentre;
 import com.rsh.fitness_centre.entity.Slot;
 import com.rsh.fitness_centre.entity.User;
 import com.rsh.fitness_centre.exception.BookingNotFoundException;
 import com.rsh.fitness_centre.repository.BookingRepository;
+import com.rsh.fitness_centre.repository.FitnessCentreRepository;
 import com.rsh.fitness_centre.repository.SlotRepository;
 import com.rsh.fitness_centre.repository.UserRepository;
 import com.rsh.fitness_centre.service.BookingService;
+import com.rsh.fitness_centre.service.FitnessCentreService;
 import com.rsh.fitness_centre.service.UserService;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +41,9 @@ class BookingServiceIntegrationTest {
   private UserService userService;
 
   @Autowired
+  private FitnessCentreService fitnessCentreService;
+
+  @Autowired
   private BookingRepository bookingRepository;
 
   @Autowired
@@ -45,31 +51,36 @@ class BookingServiceIntegrationTest {
 
   @Autowired
   private UserRepository userRepository;
-  
+
   @Autowired
-  private com.rsh.fitness_centre.util.SequenceGenerator sequenceGenerator;
+  private FitnessCentreRepository fitnessCentreRepository;
 
   private User testUser;
   private Slot testSlot;
+  private FitnessCentre testCentre;
 
   @BeforeEach
   void setUp() {
     bookingRepository.deleteAll();
     slotRepository.deleteAll();
     userRepository.deleteAll();
+    fitnessCentreRepository.deleteAll();
+
+    // Create test centre
+    testCentre = fitnessCentreService.addCentre("Test Centre", null, null);
 
     // Create test user
     testUser = userService.addUser("Test User");
 
     // Create test slot
     testSlot = new Slot(
-        sequenceGenerator.getNext("Slot"),
+        null,
         LocalDate.now(),
         Activity.YOGA,
         9,
         10,
         20,
-        1
+        testCentre
     );
     testSlot = slotRepository.save(testSlot);
   }
@@ -83,8 +94,8 @@ class BookingServiceIntegrationTest {
     // Assert
     assertNotNull(booking);
     assertNotNull(booking.getId());
-    assertEquals(testSlot.getId(), booking.getSlotId());
-    assertEquals(testUser.getId(), booking.getBookedBy());
+    assertEquals(testSlot.getId(), booking.getSlot().getId());
+    assertEquals(testUser.getId(), booking.getUser().getId());
     assertEquals(BookingStatus.BOOKED, booking.getStatus());
 
     // Verify persistence
@@ -116,7 +127,7 @@ class BookingServiceIntegrationTest {
   void testCancelNonExistentBookingThrowsException() {
     // Act & Assert
     assertThrows(BookingNotFoundException.class, () -> {
-      bookingService.cancelBooking(9999);
+      bookingService.cancelBooking(9999L);
     });
   }
 
@@ -132,7 +143,7 @@ class BookingServiceIntegrationTest {
     // Assert
     assertNotNull(retrievedBooking);
     assertEquals(booking.getId(), retrievedBooking.getId());
-    assertEquals(testUser.getId(), retrievedBooking.getBookedBy());
+    assertEquals(testUser.getId(), retrievedBooking.getUser().getId());
   }
 
   @Test
@@ -149,8 +160,8 @@ class BookingServiceIntegrationTest {
 
     // Assert
     assertEquals(2, allBookings.size());
-    assertTrue(allBookings.stream().anyMatch(b -> b.getId() == booking1.getId()));
-    assertTrue(allBookings.stream().anyMatch(b -> b.getId() == booking2.getId()));
+    assertTrue(allBookings.stream().anyMatch(b -> b.getId().equals(booking1.getId())));
+    assertTrue(allBookings.stream().anyMatch(b -> b.getId().equals(booking2.getId())));
   }
 
   @Test
@@ -158,13 +169,13 @@ class BookingServiceIntegrationTest {
   void testGetBookingsByCentreFetchesFromDatabase() {
     // Arrange - Create multiple slots and bookings for same centre
     Slot slot2 = new Slot(
-        sequenceGenerator.getNext("Slot"),
+        null,
         LocalDate.now().plusDays(1),
         Activity.CARDIO,
         10,
         11,
         20,
-        1  // Same fitness centre ID
+        testCentre
     );
     slot2 = slotRepository.save(slot2);
 
@@ -173,7 +184,7 @@ class BookingServiceIntegrationTest {
     Booking booking2 = bookingService.addBooking(slot2.getId(), user2.getId());
 
     // Act
-    var centreBookings = bookingService.getBookingsOfCentre(1);
+    var centreBookings = bookingService.getBookingsOfCentre(testCentre.getId());
 
     // Assert
     assertEquals(2, centreBookings.size());
@@ -184,7 +195,7 @@ class BookingServiceIntegrationTest {
   void testBookingStatusPersistenceAcrossTransactions() {
     // Arrange
     Booking booking = bookingService.addBooking(testSlot.getId(), testUser.getId());
-    int bookingId = booking.getId();
+    Long bookingId = booking.getId();
 
     // Act - Cancel and verify
     Booking cancelledBooking = bookingService.cancelBooking(bookingId);
@@ -219,7 +230,7 @@ class BookingServiceIntegrationTest {
   @DisplayName("Should retrieve empty set when no bookings exist for centre")
   void testGetBookingsByCentreReturnsEmptySet() {
     // Act
-    var centreBookings = bookingService.getBookingsOfCentre(9999);
+    var centreBookings = bookingService.getBookingsOfCentre(9999L);
 
     // Assert
     assertNotNull(centreBookings);
