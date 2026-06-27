@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import io.micrometer.tracing.Tracer;
+import io.micrometer.tracing.Span;
 
 @Service
 public class UserService {
@@ -18,11 +20,17 @@ public class UserService {
   private static final Logger logger = LoggerFactory.getLogger(UserService.class);
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final Tracer tracer;
 
   @Autowired
-  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, @Autowired(required = false) Tracer tracer) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
+    this.tracer = tracer;
+  }
+
+  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    this(userRepository, passwordEncoder, null);
   }
 
   public User addUser(String name) {
@@ -70,23 +78,30 @@ public class UserService {
    * @throws IllegalArgumentException if user with email already exists
    */
   public User registerUser(String email, String password, String name) {
-    logger.info("Registering new user with email: {}", email);
+    Span span = tracer != null ? tracer.nextSpan().name("db-register-user-span") : null;
+    try (Tracer.SpanInScope ws = tracer != null ? tracer.withSpan(span.start()) : null) {
+      logger.info("Registering new user with email: {}", email);
 
-    if (userRepository.findByEmail(email).isPresent()) {
-      logger.warn("User registration failed: email already exists: {}", email);
-      throw new IllegalArgumentException("User with email already exists: " + email);
+      if (userRepository.findByEmail(email).isPresent()) {
+        logger.warn("User registration failed: email already exists: {}", email);
+        throw new IllegalArgumentException("User with email already exists: " + email);
+      }
+
+      User user = new User();
+      user.setEmail(email);
+      user.setName(name);
+      user.setPasswordHash(passwordEncoder.encode(password));
+      user.setEnabled(true);
+      user.setRoles(Set.of(UserRole.USER));
+
+      User savedUser = userRepository.save(user);
+      logger.info("User registered successfully with ID: {} and email: {}", savedUser.getId(), email);
+      return savedUser;
+    } finally {
+      if (span != null) {
+        span.end();
+      }
     }
-
-    User user = new User();
-    user.setEmail(email);
-    user.setName(name);
-    user.setPasswordHash(passwordEncoder.encode(password));
-    user.setEnabled(true);
-    user.setRoles(Set.of(UserRole.USER));
-
-    User savedUser = userRepository.save(user);
-    logger.info("User registered successfully with ID: {} and email: {}", savedUser.getId(), email);
-    return savedUser;
   }
 
   /**
@@ -98,28 +113,35 @@ public class UserService {
    * @throws IllegalArgumentException if credentials are invalid
    */
   public User authenticateUser(String email, String password) {
-    logger.debug("Authenticating user with email: {}", email);
+    Span span = tracer != null ? tracer.nextSpan().name("db-authenticate-user-span") : null;
+    try (Tracer.SpanInScope ws = tracer != null ? tracer.withSpan(span.start()) : null) {
+      logger.debug("Authenticating user with email: {}", email);
 
-    User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> {
-          logger.warn("Authentication failed: user not found with email: {}", email);
-          return new IllegalArgumentException("Invalid email or password");
-        });
+      User user = userRepository.findByEmail(email)
+          .orElseThrow(() -> {
+            logger.warn("Authentication failed: user not found with email: {}", email);
+            return new IllegalArgumentException("Invalid email or password");
+          });
 
-    if (!user.isEnabled()) {
-      logger.warn("Authentication failed: user account is disabled: {}", email);
-      throw new IllegalArgumentException("User account is disabled");
+      if (!user.isEnabled()) {
+        logger.warn("Authentication failed: user account is disabled: {}", email);
+        throw new IllegalArgumentException("User account is disabled");
+      }
+
+      if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+        logger.warn("Authentication failed: invalid password for user: {}", email);
+        throw new IllegalArgumentException("Invalid email or password");
+      }
+
+      user.setLastLogin(LocalDateTime.now());
+      User updatedUser = userRepository.save(user);
+      logger.info("User authenticated successfully: {}", email);
+      return updatedUser;
+    } finally {
+      if (span != null) {
+        span.end();
+      }
     }
-
-    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-      logger.warn("Authentication failed: invalid password for user: {}", email);
-      throw new IllegalArgumentException("Invalid email or password");
-    }
-
-    user.setLastLogin(LocalDateTime.now());
-    User updatedUser = userRepository.save(user);
-    logger.info("User authenticated successfully: {}", email);
-    return updatedUser;
   }
 
   /**
