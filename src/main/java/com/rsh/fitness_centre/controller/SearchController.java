@@ -7,6 +7,12 @@ import com.rsh.fitness_centre.entity.Slot;
 import com.rsh.fitness_centre.entity.request.SearchActivityRequest;
 import com.rsh.fitness_centre.service.BookingService;
 import com.rsh.fitness_centre.service.FitnessCentreService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Optional;
@@ -19,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/search")
+@Tag(name = "Search", description = "Search and discovery endpoints")
 public class SearchController {
 
   private final BookingService bookingService;
@@ -32,6 +39,12 @@ public class SearchController {
   }
 
   @GetMapping
+  @Operation(summary = "Search activities", description = "Search for available fitness activities by name and optional centre name")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Activities found and retrieved successfully",
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = Slot.class))),
+      @ApiResponse(responseCode = "400", description = "Invalid search criteria")
+  })
   public Set<Slot> searchActivities(@RequestBody SearchActivityRequest request) {
 
     if (request.getFitnessCentreName() != null && !request.getFitnessCentreName().isEmpty()) {

@@ -61,7 +61,7 @@ class UserControllerTest {
     when(userService.getAllUsers()).thenReturn(users);
 
     // Act
-    Set<User> result = userController.addUser();
+    Set<User> result = userController.getAllUsers();
 
     // Assert
     assertNotNull(result);
@@ -94,7 +94,7 @@ class UserControllerTest {
     when(userService.getAllUsers()).thenReturn(new HashSet<>());
 
     // Act
-    Set<User> result = userController.addUser();
+    Set<User> result = userController.getAllUsers();
 
     // Assert
     assertNotNull(result);

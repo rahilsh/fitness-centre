@@ -1,6 +1,7 @@
 package com.rsh.fitness_centre.entity;
 
 import com.google.common.base.Objects;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,11 +13,14 @@ import lombok.NoArgsConstructor;
 @Entity(name = "app_user")
 @NoArgsConstructor
 @Getter
+@Schema(description = "Registered user in the system")
 public class User {
 
   @Id
+  @Schema(description = "Unique user identifier", example = "1")
   private int id;
   
+  @Schema(description = "User's full name", example = "John Doe")
   private String name;
   
   public User(int id, String name) {
