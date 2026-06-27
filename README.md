@@ -11,7 +11,21 @@ A Spring Boot REST API for managing fitness centres, user bookings, and activity
 - **Activity Search**: Search for available activities across centres
 - **Health Check**: Application health monitoring endpoint
 
-### ✅ Recent Enhancements (v1.1.0)
+### ✅ Recent Enhancements (v1.2.0)
+
+#### Authentication & Authorization (JWT)
+- **Role-Based Access Control (RBAC)**: Secure endpoints with distinct authorization permissions for `ANONYMOUS`, `USER`, `ADMIN`, and `SUPER_ADMIN` roles.
+- **JWT Tokens (HS256)**: Issue compact, secure JWT claims on registration or login, utilizing Spring Security filters to establish session-less authentication context.
+- **Fixed Role mapping in Spring Security Filter Chain**: Addressed a security gap in `JwtAuthenticationFilter` where mapped roles are eagerly loaded to GrantedAuthorities.
+
+#### HTTP-Layer E2E Functional Tests
+- **Real Embedded Server Testing**: High-fidelity E2E tests executing network loopback calls over an embedded Tomcat container (`webEnvironment = RANDOM_PORT`).
+- **Standard-compliant HttpClient**: Implemented E2E functional test cases using Java 21's native `HttpClient` for ultra-clean, fast and robust HTTP integration testing.
+- **REST Status and Error Compliance**: Verified appropriate HTTP status code assignments (201 Created for POSTs, 200 OK for GETs/PATCHes, and 400/401/403/404/405 for explicit error states).
+
+#### JPA Serialization Fixes & Bug Patches
+- **Eradicated infinite JSON circular recursion loops**: Resolved deep serialization loops across `Slot`, `FitnessCentre`, `Booking`, and `User` using precise `@JsonIgnoreProperties` and `@JsonIgnore` Jackson directives.
+- **ClassCastException Patch**: Resolved critical crash in `/auth/me` when invoked anonymously by type-checking authentication principals.
 
 #### Input Validation & Error Handling
 - Comprehensive input validation on all request bodies using Jakarta Validation API
@@ -158,8 +172,8 @@ mvn clean test
 open target/site/jacoco/index.html
 ```
 
-**Current Coverage**: 91.93% ✅ (Exceeds 85% threshold)
-**Test Count**: 136 tests (73 unit + 50 integration + 13 handler tests)
+**Current Coverage**: >85% ✅ (Exceeds 85% threshold)
+**Test Count**: 273 tests (including unit, integration, and E2E HTTP functional tests)
 
 ## 🗄️ Database Configuration
 
@@ -216,9 +230,9 @@ Invalid requests return error responses:
 
 ## 📊 Project Statistics
 
-- **Lines of Code**: ~2,500+
-- **Test Cases**: 136
-- **Code Coverage**: 91.93%
+- **Lines of Code**: ~3,000+
+- **Test Cases**: 273
+- **Code Coverage**: >85% (meets threshold)
 - **Java Version**: 21 (LTS)
 - **API Endpoints**: 10+
 - **Database Tables**: 4 (User, Booking, FitnessCentre, Slot)
@@ -262,10 +276,11 @@ fitness-centre/
 - ✅ ~~Input Validation~~ (v1.1.0)
 - ✅ ~~API Documentation (Swagger)~~ (v1.1.0)
 - ✅ ~~Database Relationships~~ (v1.1.0)
-- 🔲 Authentication & Authorization (JWT)
-- 🔲 Logging & Monitoring
+- ✅ ~~Authentication & Authorization (JWT)~~ (v1.2.0)
+- ✅ ~~Logging & Monitoring~~ (v1.2.0)
+- ✅ ~~Response DTOs~~ (v1.2.0)
+- ✅ ~~E2E HTTP Functional Tests~~ (v1.2.0)
 - 🔲 Pagination & Filtering
-- 🔲 Response DTOs
 - 🔲 Transaction Management
 
 See [.docs/IMPROVEMENTS.md](.docs/IMPROVEMENTS.md) for detailed improvement roadmap.
@@ -304,4 +319,4 @@ For questions or support, open a GitHub issue or reach out via email.
 
 ---
 
-**Last Updated**: June 27, 2026 | **Version**: 1.1.0
+**Last Updated**: June 27, 2026 | **Version**: 1.2.0
