@@ -1,39 +1,35 @@
 package com.rsh.fitness_centre.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import com.rsh.fitness_centre.entity.Booking;
-import com.rsh.fitness_centre.entity.BookingStatus;
-import com.rsh.fitness_centre.entity.Slot;
-import com.rsh.fitness_centre.entity.User;
+import com.rsh.fitness_centre.entity.*;
 import com.rsh.fitness_centre.entity.request.AddBookingRequest;
+import com.rsh.fitness_centre.entity.response.BookingResponse;
 import com.rsh.fitness_centre.exception.BookingNotFoundException;
 import com.rsh.fitness_centre.service.BookingService;
-import java.util.HashSet;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("BookingController Tests")
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 class BookingControllerTest {
-
-  private BookingController bookingController;
 
   @Mock
   private BookingService bookingService;
 
+  @InjectMocks
+  private BookingController bookingController;
+
   @BeforeEach
   void setUp() {
-    bookingController = new BookingController(bookingService);
+    MockitoAnnotations.openMocks(this);
   }
 
   private User createUser(Long id, String name) {
@@ -41,12 +37,11 @@ class BookingControllerTest {
   }
 
   private Slot createSlot(Long id) {
-    return new Slot(id, null, null, 9, 10, 20, null);
+    return new Slot(id, null, Activity.YOGA, 9, 10, 20, null);
   }
 
   private Booking createBooking(Long id, User user, Slot slot, BookingStatus status) {
-    Booking booking = new Booking(id, user, slot, null, status);
-    return booking;
+    return new Booking(id, user, slot, null, status);
   }
 
   @Test
@@ -62,12 +57,12 @@ class BookingControllerTest {
     when(bookingService.addBooking(1L, 1L)).thenReturn(booking);
 
     // Act
-    Booking result = bookingController.addBooking(request).getBody();
+    BookingResponse result = bookingController.addBooking(request).getBody();
 
     // Assert
     assertNotNull(result);
     assertEquals(1L, result.getId());
-    assertEquals(BookingStatus.BOOKED, result.getStatus());
+    assertEquals("BOOKED", result.getStatus());
     verify(bookingService, times(1)).addBooking(1L, 1L);
   }
 
@@ -82,11 +77,11 @@ class BookingControllerTest {
     when(bookingService.cancelBooking(bookingId)).thenReturn(booking);
 
     // Act
-    Booking result = bookingController.cancelBooking(bookingId);
+    BookingResponse result = bookingController.cancelBooking(bookingId).getBody();
 
     // Assert
     assertNotNull(result);
-    assertEquals(BookingStatus.CANCELLED, result.getStatus());
+    assertEquals("CANCELLED", result.getStatus());
     verify(bookingService, times(1)).cancelBooking(bookingId);
   }
 
@@ -101,7 +96,7 @@ class BookingControllerTest {
     when(bookingService.getBooking(bookingId)).thenReturn(booking);
 
     // Act
-    Booking result = bookingController.getBooking(bookingId);
+    BookingResponse result = bookingController.getBooking(bookingId).getBody();
 
     // Assert
     assertNotNull(result);
@@ -120,8 +115,8 @@ class BookingControllerTest {
     when(bookingService.getBookings(0, 20, "bookedAt")).thenReturn(page);
 
     // Act
-    org.springframework.http.ResponseEntity<?> response = bookingController.getBookings(0, 20, "bookedAt");
-    org.springframework.data.domain.Page<Booking> result = (org.springframework.data.domain.Page<Booking>) response.getBody();
+    ResponseEntity<?> response = bookingController.getBookings(0, 20, "bookedAt");
+    org.springframework.data.domain.Page<BookingResponse> result = (org.springframework.data.domain.Page<BookingResponse>) response.getBody();
 
     // Assert
     assertNotNull(result);
@@ -154,10 +149,10 @@ class BookingControllerTest {
     when(bookingService.getBooking(bookingId)).thenReturn(null);
 
     // Act
-    Booking result = bookingController.getBooking(bookingId);
+    BookingResponse result = bookingController.getBooking(bookingId).getBody();
 
     // Assert
-    assertEquals(null, result);
+    assertNull(result);
     verify(bookingService, times(1)).getBooking(bookingId);
   }
 
@@ -174,11 +169,11 @@ class BookingControllerTest {
     when(bookingService.addBooking(5L, 10L)).thenReturn(booking);
 
     // Act
-    Booking result = bookingController.addBooking(request).getBody();
+    BookingResponse result = bookingController.addBooking(request).getBody();
 
     // Assert
-    assertEquals(5L, result.getSlot().getId());
-    assertEquals(10L, result.getUser().getId());
+    assertEquals(5L, result.getSlotId());
+    assertEquals(10L, result.getUserId());
     verify(bookingService, times(1)).addBooking(5L, 10L);
   }
 
@@ -201,8 +196,8 @@ class BookingControllerTest {
     when(bookingService.addBooking(2L, 2L)).thenReturn(booking2);
 
     // Act
-    Booking result1 = bookingController.addBooking(request1).getBody();
-    Booking result2 = bookingController.addBooking(request2).getBody();
+    BookingResponse result1 = bookingController.addBooking(request1).getBody();
+    BookingResponse result2 = bookingController.addBooking(request2).getBody();
 
     // Assert
     assertEquals(1L, result1.getId());
@@ -219,8 +214,8 @@ class BookingControllerTest {
     when(bookingService.getBookings(0, 20, "bookedAt")).thenReturn(page);
 
     // Act
-    org.springframework.http.ResponseEntity<?> response = bookingController.getBookings(0, 20, "bookedAt");
-    org.springframework.data.domain.Page<Booking> result = (org.springframework.data.domain.Page<Booking>) response.getBody();
+    ResponseEntity<?> response = bookingController.getBookings(0, 20, "bookedAt");
+    org.springframework.data.domain.Page<BookingResponse> result = (org.springframework.data.domain.Page<BookingResponse>) response.getBody();
 
     // Assert
     assertNotNull(result);
@@ -241,11 +236,11 @@ class BookingControllerTest {
     when(bookingService.cancelBooking(bookingId)).thenReturn(cancelledBooking);
 
     // Act
-    Booking initialBooking = bookingController.getBooking(bookingId);
-    Booking cancelledResult = bookingController.cancelBooking(bookingId);
+    BookingResponse initialBooking = bookingController.getBooking(bookingId).getBody();
+    BookingResponse cancelledResult = bookingController.cancelBooking(bookingId).getBody();
 
     // Assert
-    assertEquals(BookingStatus.BOOKED, initialBooking.getStatus());
-    assertEquals(BookingStatus.CANCELLED, cancelledResult.getStatus());
+    assertEquals("BOOKED", initialBooking.getStatus());
+    assertEquals("CANCELLED", cancelledResult.getStatus());
   }
 }

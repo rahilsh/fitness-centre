@@ -40,48 +40,53 @@ public class BookingController {
   @Operation(summary = "Create a new booking", description = "Book a fitness activity slot for a user")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "201", description = "Booking created successfully",
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = Booking.class))),
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = com.rsh.fitness_centre.entity.response.BookingResponse.class))),
       @ApiResponse(responseCode = "400", description = "Invalid input - slot ID and user ID are required")
   })
-  public ResponseEntity<Booking> addBooking(@Valid @RequestBody AddBookingRequest request) {
+  public ResponseEntity<com.rsh.fitness_centre.entity.response.BookingResponse> addBooking(@Valid @RequestBody AddBookingRequest request) {
     Booking booking = bookingService.addBooking(request.getSlotId(), request.getUserId());
-    return ResponseEntity.status(HttpStatus.CREATED).body(booking);
+    return ResponseEntity.status(HttpStatus.CREATED).body(com.rsh.fitness_centre.entity.response.BookingResponse.fromEntity(booking));
   }
 
   @PatchMapping("/{bookingId}")
   @Operation(summary = "Cancel a booking", description = "Cancel an existing booking by booking ID")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Booking cancelled successfully",
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = Booking.class))),
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = com.rsh.fitness_centre.entity.response.BookingResponse.class))),
       @ApiResponse(responseCode = "404", description = "Booking not found")
   })
-  public Booking cancelBooking(
+  public ResponseEntity<com.rsh.fitness_centre.entity.response.BookingResponse> cancelBooking(
       @Parameter(description = "Booking ID") @PathVariable Long bookingId) {
-    return bookingService.cancelBooking(bookingId);
+    Booking booking = bookingService.cancelBooking(bookingId);
+    return ResponseEntity.ok(com.rsh.fitness_centre.entity.response.BookingResponse.fromEntity(booking));
   }
 
   @GetMapping("/{bookingId}")
   @Operation(summary = "Get booking details", description = "Retrieve details of a specific booking")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Booking retrieved successfully",
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = Booking.class))),
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = com.rsh.fitness_centre.entity.response.BookingResponse.class))),
       @ApiResponse(responseCode = "404", description = "Booking not found")
   })
-  public Booking getBooking(
+  public ResponseEntity<com.rsh.fitness_centre.entity.response.BookingResponse> getBooking(
       @Parameter(description = "Booking ID") @PathVariable Long bookingId) {
-    return bookingService.getBooking(bookingId);
+    Booking booking = bookingService.getBooking(bookingId);
+    return ResponseEntity.ok(com.rsh.fitness_centre.entity.response.BookingResponse.fromEntity(booking));
   }
 
   @GetMapping
   @Operation(summary = "Get all bookings", description = "Retrieve a paginated and sorted list of all bookings")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully",
-          content = @Content(mediaType = "application/json", schema = @Schema(implementation = Booking.class)))
+          content = @Content(mediaType = "application/json", schema = @Schema(implementation = com.rsh.fitness_centre.entity.response.BookingResponse.class)))
   })
   public ResponseEntity<?> getBookings(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "bookedAt") String sortBy) {
-    return ResponseEntity.ok(bookingService.getBookings(page, size, sortBy));
+    org.springframework.data.domain.Page<Booking> bookingsPage = bookingService.getBookings(page, size, sortBy);
+    org.springframework.data.domain.Page<com.rsh.fitness_centre.entity.response.BookingResponse> responsePage = 
+        bookingsPage.map(com.rsh.fitness_centre.entity.response.BookingResponse::fromEntity);
+    return ResponseEntity.ok(responsePage);
   }
 }
