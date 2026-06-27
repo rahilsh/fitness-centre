@@ -3,6 +3,7 @@ package com.rsh.fitness_centre.controller;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import com.rsh.fitness_centre.entity.User;
@@ -12,7 +13,11 @@ import com.rsh.fitness_centre.entity.request.RegisterRequest;
 import com.rsh.fitness_centre.entity.response.LoginResponse;
 import com.rsh.fitness_centre.security.JwtTokenProvider;
 import com.rsh.fitness_centre.security.TokenBlacklistService;
+import com.rsh.fitness_centre.service.RefreshTokenService;
 import com.rsh.fitness_centre.service.UserService;
+import com.rsh.fitness_centre.entity.RefreshToken;
+import jakarta.servlet.http.HttpServletResponse;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,9 +47,15 @@ class AuthControllerTest {
   @Mock
   private TokenBlacklistService tokenBlacklistService;
 
+  @Mock
+  private RefreshTokenService refreshTokenService;
+
+  @Mock
+  private HttpServletResponse response;
+
   @BeforeEach
   void setUp() {
-    authController = new AuthController(userService, tokenProvider, tokenBlacklistService);
+    authController = new AuthController(userService, tokenProvider, tokenBlacklistService, refreshTokenService);
   }
 
   @Test
@@ -61,12 +72,13 @@ class AuthControllerTest {
     when(userService.registerUser(anyString(), anyString(), anyString())).thenReturn(user);
     when(tokenProvider.generateToken(any(User.class))).thenReturn("Bearer token123");
     when(tokenProvider.getExpirationTimeInSeconds()).thenReturn(86400L);
+    when(refreshTokenService.createRefreshToken(anyLong())).thenReturn(new RefreshToken(1L, user, "refresh-token-123", Instant.now().plusSeconds(3600), Instant.now(), false));
 
-    ResponseEntity<LoginResponse> response = authController.register(request);
+    ResponseEntity<LoginResponse> responseEntity = authController.register(request, response);
 
-    assertNotNull(response);
-    assertNotNull(response.getBody());
-    assertNotNull(response.getBody().getToken());
+    assertNotNull(responseEntity);
+    assertNotNull(responseEntity.getBody());
+    assertNotNull(responseEntity.getBody().getToken());
   }
 
   @Test
@@ -75,9 +87,9 @@ class AuthControllerTest {
     RegisterRequest request = new RegisterRequest("john@example.com", "John Doe",
         "SecurePass123", "DifferentPass456");
 
-    ResponseEntity<LoginResponse> response = authController.register(request);
+    ResponseEntity<LoginResponse> responseEntity = authController.register(request, response);
 
-    assertNotNull(response);
+    assertNotNull(responseEntity);
   }
 
   @Test
@@ -89,9 +101,9 @@ class AuthControllerTest {
     when(userService.registerUser(anyString(), anyString(), anyString()))
         .thenThrow(new IllegalArgumentException("User with email already exists"));
 
-    ResponseEntity<LoginResponse> response = authController.register(request);
+    ResponseEntity<LoginResponse> responseEntity = authController.register(request, response);
 
-    assertNotNull(response);
+    assertNotNull(responseEntity);
   }
 
   @Test
@@ -108,12 +120,13 @@ class AuthControllerTest {
     when(userService.authenticateUser(anyString(), anyString())).thenReturn(user);
     when(tokenProvider.generateToken(any(User.class))).thenReturn("Bearer token123");
     when(tokenProvider.getExpirationTimeInSeconds()).thenReturn(86400L);
+    when(refreshTokenService.createRefreshToken(anyLong())).thenReturn(new RefreshToken(1L, user, "refresh-token-123", Instant.now().plusSeconds(3600), Instant.now(), false));
 
-    ResponseEntity<LoginResponse> response = authController.login(request);
+    ResponseEntity<LoginResponse> responseEntity = authController.login(request, response);
 
-    assertNotNull(response);
-    assertNotNull(response.getBody());
-    assertNotNull(response.getBody().getToken());
+    assertNotNull(responseEntity);
+    assertNotNull(responseEntity.getBody());
+    assertNotNull(responseEntity.getBody().getToken());
   }
 
   @Test
@@ -124,9 +137,9 @@ class AuthControllerTest {
     when(userService.authenticateUser(anyString(), anyString()))
         .thenThrow(new IllegalArgumentException("Invalid email or password"));
 
-    ResponseEntity<LoginResponse> response = authController.login(request);
+    ResponseEntity<LoginResponse> responseEntity = authController.login(request, response);
 
-    assertNotNull(response);
+    assertNotNull(responseEntity);
   }
 
   @Test

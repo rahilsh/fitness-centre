@@ -12,6 +12,7 @@ import com.rsh.fitness_centre.entity.request.AddActivityRequest;
 import com.rsh.fitness_centre.entity.request.AddBookingRequest;
 import com.rsh.fitness_centre.entity.request.SearchActivityRequest;
 import com.rsh.fitness_centre.repository.BookingRepository;
+import com.rsh.fitness_centre.repository.RefreshTokenRepository;
 import com.rsh.fitness_centre.repository.FitnessCentreRepository;
 import com.rsh.fitness_centre.repository.SlotRepository;
 import com.rsh.fitness_centre.repository.UserRepository;
@@ -64,6 +65,9 @@ public class HttpFunctionalTests {
     @Autowired
     private BookingRepository bookingRepository;
 
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
     private HttpClient httpClient;
     private ObjectMapper objectMapper;
     private String validJwt;
@@ -86,6 +90,7 @@ public class HttpFunctionalTests {
 
         // Clean up database tables in order of dependencies
         bookingRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
         slotRepository.deleteAll();
         fitnessCentreRepository.deleteAll();
         userRepository.deleteAll();

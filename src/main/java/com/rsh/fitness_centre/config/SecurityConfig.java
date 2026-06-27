@@ -75,7 +75,7 @@ public class SecurityConfig {
             // Public endpoints
             .requestMatchers("/health", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/search").permitAll()
-            .requestMatchers("/auth/register", "/auth/login", "/auth/me").permitAll()
+            .requestMatchers("/auth/register", "/auth/login", "/auth/me", "/auth/refresh").permitAll()
             .requestMatchers("/h2-console/**").permitAll()
             
             // User endpoints

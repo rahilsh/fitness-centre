@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.rsh.fitness_centre.entity.User;
 import com.rsh.fitness_centre.repository.UserRepository;
+import com.rsh.fitness_centre.repository.RefreshTokenRepository;
 import com.rsh.fitness_centre.service.UserService;
 import com.rsh.fitness_centre.util.SequenceGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,10 +30,14 @@ class UserServiceIntegrationTest {
   private UserRepository userRepository;
 
   @Autowired
+  private RefreshTokenRepository refreshTokenRepository;
+
+  @Autowired
   private SequenceGenerator sequenceGenerator;
 
   @BeforeEach
   void setUp() {
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
   }
 

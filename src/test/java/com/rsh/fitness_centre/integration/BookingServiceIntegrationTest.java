@@ -16,6 +16,7 @@ import com.rsh.fitness_centre.repository.BookingRepository;
 import com.rsh.fitness_centre.repository.FitnessCentreRepository;
 import com.rsh.fitness_centre.repository.SlotRepository;
 import com.rsh.fitness_centre.repository.UserRepository;
+import com.rsh.fitness_centre.repository.RefreshTokenRepository;
 import com.rsh.fitness_centre.service.BookingService;
 import com.rsh.fitness_centre.service.FitnessCentreService;
 import com.rsh.fitness_centre.service.UserService;
@@ -53,6 +54,9 @@ class BookingServiceIntegrationTest {
   private UserRepository userRepository;
 
   @Autowired
+  private RefreshTokenRepository refreshTokenRepository;
+
+  @Autowired
   private FitnessCentreRepository fitnessCentreRepository;
 
   private User testUser;
@@ -62,6 +66,7 @@ class BookingServiceIntegrationTest {
   @BeforeEach
   void setUp() {
     bookingRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
     slotRepository.deleteAll();
     userRepository.deleteAll();
     fitnessCentreRepository.deleteAll();

@@ -7,7 +7,10 @@ import com.rsh.fitness_centre.entity.response.LoginResponse;
 import com.rsh.fitness_centre.entity.response.UserResponse;
 import com.rsh.fitness_centre.security.TokenBlacklistService;
 import com.rsh.fitness_centre.security.JwtTokenProvider;
+import com.rsh.fitness_centre.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import com.rsh.fitness_centre.entity.RefreshToken;
 import com.rsh.fitness_centre.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -43,12 +46,15 @@ public class AuthController {
   private final UserService userService;
   private final JwtTokenProvider tokenProvider;
   private final TokenBlacklistService tokenBlacklistService;
+  private final RefreshTokenService refreshTokenService;
 
   @Autowired
-  public AuthController(UserService userService, JwtTokenProvider tokenProvider, TokenBlacklistService tokenBlacklistService) {
+  public AuthController(UserService userService, JwtTokenProvider tokenProvider, 
+                        TokenBlacklistService tokenBlacklistService, RefreshTokenService refreshTokenService) {
     this.userService = userService;
     this.tokenProvider = tokenProvider;
     this.tokenBlacklistService = tokenBlacklistService;
+    this.refreshTokenService = refreshTokenService;
   }
 
   /**
@@ -64,7 +70,7 @@ public class AuthController {
       @ApiResponse(responseCode = "400", description = "Invalid request or user already exists",
           content = @Content(schema = @Schema(implementation = String.class)))
   })
-  public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
+  public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest registerRequest, HttpServletResponse servletResponse) {
     logger.info("User registration request for email: {}", registerRequest.getEmail());
 
     if (!registerRequest.getPassword().equals(registerRequest.getPasswordConfirmation())) {
@@ -81,6 +87,10 @@ public class AuthController {
 
       String token = tokenProvider.generateToken(user);
       long expirationSeconds = tokenProvider.getExpirationTimeInSeconds();
+
+      // Create refresh token
+      RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+      addRefreshTokenCookie(servletResponse, refreshToken.getToken());
 
       LoginResponse response = LoginResponse.builder()
           .token(token)
@@ -113,7 +123,7 @@ public class AuthController {
       @ApiResponse(responseCode = "401", description = "Invalid credentials",
           content = @Content(schema = @Schema(implementation = String.class)))
   })
-  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse servletResponse) {
     logger.info("Login request for email: {}", loginRequest.getEmail());
 
     try {
@@ -121,6 +131,10 @@ public class AuthController {
 
       String token = tokenProvider.generateToken(user);
       long expirationSeconds = tokenProvider.getExpirationTimeInSeconds();
+
+      // Create refresh token
+      RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+      addRefreshTokenCookie(servletResponse, refreshToken.getToken());
 
       LoginResponse response = LoginResponse.builder()
           .token(token)
@@ -191,6 +205,7 @@ public class AuthController {
    * Safe logout endpoint that blacklists the current JWT access token.
    *
    * @param request the HTTP servlet request
+   * @param response the HTTP servlet response
    * @return success response
    */
   @PostMapping("/logout")
@@ -200,7 +215,7 @@ public class AuthController {
       @ApiResponse(responseCode = "200", description = "Logout successful"),
       @ApiResponse(responseCode = "401", description = "Unauthorized")
   })
-  public ResponseEntity<Void> logout(HttpServletRequest request) {
+  public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
     String bearerToken = request.getHeader("Authorization");
     if (org.springframework.util.StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
       String jwt = bearerToken.substring(7);
@@ -208,10 +223,94 @@ public class AuthController {
         String tokenId = tokenProvider.extractTokenId(jwt);
         long expirationSeconds = tokenProvider.getExpirationTimeInSeconds();
         tokenBlacklistService.blacklistToken(tokenId, expirationSeconds);
+        
+        Long userId = tokenProvider.extractUserId(jwt);
+        if (userId != null) {
+          refreshTokenService.revokeByUserId(userId);
+        }
+        
         logger.info("User logged out successfully and token blacklisted: {}", tokenId);
       }
     }
+    clearRefreshTokenCookie(response);
     SecurityContextHolder.clearContext();
     return ResponseEntity.ok().build();
+  }
+
+  /**
+   * Endpoint to refresh access token using cookie-based refresh token.
+   */
+  @PostMapping("/refresh")
+  @Operation(summary = "Refresh JWT access token")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid or expired refresh token",
+          content = @Content(schema = @Schema(implementation = String.class)))
+  })
+  public ResponseEntity<LoginResponse> refresh(HttpServletRequest request, HttpServletResponse response) {
+    String requestRefreshToken = extractRefreshTokenFromCookie(request);
+
+    if (requestRefreshToken == null || requestRefreshToken.isEmpty()) {
+      return ResponseEntity.badRequest().build();
+    }
+
+    try {
+      RefreshToken token = refreshTokenService.findByToken(requestRefreshToken)
+          .map(refreshTokenService::verifyExpiration)
+          .orElseThrow(() -> new IllegalArgumentException("Refresh token not found in database"));
+
+      User user = token.getUser();
+      String newAccessToken = tokenProvider.generateToken(user);
+      long expirationSeconds = tokenProvider.getExpirationTimeInSeconds();
+
+      LoginResponse loginResponse = LoginResponse.builder()
+          .token(newAccessToken)
+          .userId(user.getId())
+          .email(user.getEmail())
+          .roles(user.getRoles().stream()
+              .map(Enum::name)
+              .collect(java.util.stream.Collectors.toSet()))
+          .expiresIn(expirationSeconds)
+          .build();
+
+      return ResponseEntity.ok(loginResponse);
+    } catch (IllegalArgumentException ex) {
+      logger.warn("Token refresh failed: {}", ex.getMessage());
+      clearRefreshTokenCookie(response);
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  private void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+    org.springframework.http.ResponseCookie responseCookie = org.springframework.http.ResponseCookie.from("refreshToken", refreshToken)
+        .httpOnly(true)
+        .secure(true)
+        .path("/auth")
+        .maxAge(7 * 24 * 60 * 60)
+        .sameSite("Strict")
+        .build();
+    response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, responseCookie.toString());
+  }
+
+  private void clearRefreshTokenCookie(HttpServletResponse response) {
+    org.springframework.http.ResponseCookie responseCookie = org.springframework.http.ResponseCookie.from("refreshToken", "")
+        .httpOnly(true)
+        .secure(true)
+        .path("/auth")
+        .maxAge(0)
+        .sameSite("Strict")
+        .build();
+    response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, responseCookie.toString());
+  }
+
+  private String extractRefreshTokenFromCookie(HttpServletRequest request) {
+    if (request.getCookies() != null) {
+      for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+        if ("refreshToken".equals(cookie.getName())) {
+          return cookie.getValue();
+        }
+      }
+    }
+    return null;
   }
 }

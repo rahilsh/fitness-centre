@@ -3,6 +3,7 @@ package com.rsh.fitness_centre.integration;
 import com.rsh.fitness_centre.entity.User;
 import com.rsh.fitness_centre.entity.UserRole;
 import com.rsh.fitness_centre.repository.UserRepository;
+import com.rsh.fitness_centre.repository.RefreshTokenRepository;
 import com.rsh.fitness_centre.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,8 +26,12 @@ class AuthServiceIntegrationTest {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private RefreshTokenRepository refreshTokenRepository;
+
   @BeforeEach
   void setUp() {
+    refreshTokenRepository.deleteAll();
     userRepository.deleteAll();
   }
 
