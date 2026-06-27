@@ -3,8 +3,12 @@ package com.rsh.fitness_centre.entity;
 import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,6 +19,7 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -22,6 +27,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity(name = "app_user")
 @NoArgsConstructor
 @Getter
+@Setter
 @EntityListeners(AuditingEntityListener.class)
 @Schema(description = "Registered user in the system")
 public class User {
@@ -35,6 +41,23 @@ public class User {
   @Schema(description = "User's full name", example = "John Doe")
   private String name;
 
+  @Column(unique = true, nullable = true, updatable = false)
+  @Schema(description = "User's email address", example = "john.doe@example.com")
+  private String email;
+
+  @Column(nullable = true)
+  @Schema(description = "BCrypt hashed password")
+  private String passwordHash;
+
+  @ElementCollection(fetch = FetchType.EAGER)
+  @Enumerated(EnumType.STRING)
+  @Schema(description = "User roles for RBAC")
+  private Set<UserRole> roles = new HashSet<>();
+
+  @Column(nullable = false)
+  @Schema(description = "Whether the user account is enabled")
+  private boolean enabled = true;
+
   @CreatedDate
   @Column(nullable = false, updatable = false)
   @Schema(description = "Timestamp when the user was created")
@@ -45,12 +68,22 @@ public class User {
   @Schema(description = "Timestamp when the user was last modified")
   private LocalDateTime updatedAt;
 
+  @Column
+  @Schema(description = "Timestamp of the last login")
+  private LocalDateTime lastLogin;
+
   @OneToMany(mappedBy = "user")
   private Set<Booking> bookings = new HashSet<>();
   
   public User(Long id, String name) {
     this.id = id;
     this.name = name;
+  }
+
+  public User(Long id, String name, String email) {
+    this.id = id;
+    this.name = name;
+    this.email = email;
   }
 
   @Override
