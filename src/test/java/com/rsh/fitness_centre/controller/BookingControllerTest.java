@@ -62,7 +62,7 @@ class BookingControllerTest {
     when(bookingService.addBooking(1L, 1L)).thenReturn(booking);
 
     // Act
-    Booking result = bookingController.addBooking(request);
+    Booking result = bookingController.addBooking(request).getBody();
 
     // Assert
     assertNotNull(result);
@@ -172,7 +172,7 @@ class BookingControllerTest {
     when(bookingService.addBooking(5L, 10L)).thenReturn(booking);
 
     // Act
-    Booking result = bookingController.addBooking(request);
+    Booking result = bookingController.addBooking(request).getBody();
 
     // Assert
     assertEquals(5L, result.getSlot().getId());
@@ -199,8 +199,8 @@ class BookingControllerTest {
     when(bookingService.addBooking(2L, 2L)).thenReturn(booking2);
 
     // Act
-    Booking result1 = bookingController.addBooking(request1);
-    Booking result2 = bookingController.addBooking(request2);
+    Booking result1 = bookingController.addBooking(request1).getBody();
+    Booking result2 = bookingController.addBooking(request2).getBody();
 
     // Assert
     assertEquals(1L, result1.getId());

@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,12 +38,13 @@ public class BookingController {
   @PostMapping
   @Operation(summary = "Create a new booking", description = "Book a fitness activity slot for a user")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Booking created successfully",
+      @ApiResponse(responseCode = "201", description = "Booking created successfully",
           content = @Content(mediaType = "application/json", schema = @Schema(implementation = Booking.class))),
       @ApiResponse(responseCode = "400", description = "Invalid input - slot ID and user ID are required")
   })
-  public Booking addBooking(@Valid @RequestBody AddBookingRequest request) {
-    return bookingService.addBooking(request.getSlotId(), request.getUserId());
+  public ResponseEntity<Booking> addBooking(@Valid @RequestBody AddBookingRequest request) {
+    Booking booking = bookingService.addBooking(request.getSlotId(), request.getUserId());
+    return ResponseEntity.status(HttpStatus.CREATED).body(booking);
   }
 
   @PatchMapping("/{bookingId}")

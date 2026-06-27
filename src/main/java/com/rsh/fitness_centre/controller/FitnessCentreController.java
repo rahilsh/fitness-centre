@@ -17,6 +17,8 @@ import jakarta.validation.Valid;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,35 +41,37 @@ public class FitnessCentreController {
   @PostMapping
   @Operation(summary = "Create a new fitness centre", description = "Register a new fitness centre with timings and supported activities")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Fitness centre created successfully",
+      @ApiResponse(responseCode = "201", description = "Fitness centre created successfully",
           content = @Content(mediaType = "application/json", schema = @Schema(implementation = FitnessCentre.class))),
       @ApiResponse(responseCode = "400", description = "Invalid input - name, timings, and activities are required")
   })
-  public FitnessCentre addFitnessCentre(@Valid @RequestBody AddFitnessCentreRequest request) {
-    return fitnessCentreService.addCentre(
+  public ResponseEntity<FitnessCentre> addFitnessCentre(@Valid @RequestBody AddFitnessCentreRequest request) {
+    FitnessCentre centre = fitnessCentreService.addCentre(
         request.getName(),
         request.getTimings(),
         request.getSupportedActivities().stream()
             .map(Activity::valueOf)
             .collect(Collectors.toSet()));
+    return ResponseEntity.status(HttpStatus.CREATED).body(centre);
   }
 
   @PostMapping("/{fitnessCentreId}/slots")
   @Operation(summary = "Add activity slot", description = "Add a new activity slot to a fitness centre")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Activity slot added successfully",
+      @ApiResponse(responseCode = "201", description = "Activity slot added successfully",
           content = @Content(mediaType = "application/json", schema = @Schema(implementation = Slot.class))),
       @ApiResponse(responseCode = "400", description = "Invalid input - activity details are required")
   })
-  public Slot addActivity(
+  public ResponseEntity<Slot> addActivity(
       @Valid @RequestBody AddActivityRequest request,
       @Parameter(description = "Fitness Centre ID") @PathVariable Long fitnessCentreId) {
-    return fitnessCentreService.addActivity(
+    Slot slot = fitnessCentreService.addActivity(
         fitnessCentreId,
         request.getActivity(),
         request.getStartTime(),
         request.getEndTime(),
         request.getNoOfSlots());
+    return ResponseEntity.status(HttpStatus.CREATED).body(slot);
   }
 
   @GetMapping("/{fitnessCentreId}/slots")

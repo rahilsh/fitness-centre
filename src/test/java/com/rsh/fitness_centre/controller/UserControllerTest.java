@@ -42,7 +42,7 @@ class UserControllerTest {
     when(userService.addUser("John Doe")).thenReturn(user);
 
     // Act
-    User result = userController.addUser(request);
+    User result = userController.addUser(request).getBody();
 
     // Assert
     assertNotNull(result);
@@ -79,7 +79,7 @@ class UserControllerTest {
     when(userService.addUser("")).thenReturn(user);
 
     // Act
-    User result = userController.addUser(request);
+    User result = userController.addUser(request).getBody();
 
     // Assert
     assertNotNull(result);
@@ -111,7 +111,7 @@ class UserControllerTest {
     when(userService.addUser("John@#$%Doe")).thenReturn(user);
 
     // Act
-    User result = userController.addUser(request);
+    User result = userController.addUser(request).getBody();
 
     // Assert
     assertEquals("John@#$%Doe", result.getName());
@@ -128,7 +128,7 @@ class UserControllerTest {
     when(userService.addUser(longName)).thenReturn(user);
 
     // Act
-    User result = userController.addUser(request);
+    User result = userController.addUser(request).getBody();
 
     // Assert
     assertEquals(4L, result.getId());
@@ -151,8 +151,8 @@ class UserControllerTest {
     when(userService.addUser("User2")).thenReturn(user2);
 
     // Act
-    User result1 = userController.addUser(request1);
-    User result2 = userController.addUser(request2);
+    User result1 = userController.addUser(request1).getBody();
+    User result2 = userController.addUser(request2).getBody();
 
     // Assert
     assertEquals(1L, result1.getId());
@@ -171,7 +171,7 @@ class UserControllerTest {
     when(userService.addUser("Test User")).thenReturn(user);
 
     // Act
-    User result = userController.addUser(request);
+    User result = userController.addUser(request).getBody();
 
     // Assert
     assertNotNull(result);

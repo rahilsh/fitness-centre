@@ -58,7 +58,7 @@ class FitnessCentreControllerTest {
         .thenReturn(centre);
 
     // Act
-    FitnessCentre result = fitnessCentreController.addFitnessCentre(request);
+    FitnessCentre result = fitnessCentreController.addFitnessCentre(request).getBody();
 
     // Assert
     assertNotNull(result);
@@ -85,7 +85,7 @@ class FitnessCentreControllerTest {
         .thenReturn(slot);
 
     // Act
-    Slot result = fitnessCentreController.addActivity(request, centreId);
+    Slot result = fitnessCentreController.addActivity(request, centreId).getBody();
 
     // Assert
     assertNotNull(result);
@@ -144,7 +144,7 @@ class FitnessCentreControllerTest {
         .thenReturn(centre);
 
     // Act
-    FitnessCentre result = fitnessCentreController.addFitnessCentre(request);
+    FitnessCentre result = fitnessCentreController.addFitnessCentre(request).getBody();
 
     // Assert
     assertEquals("Gym@#$%", result.getName());
@@ -169,7 +169,7 @@ class FitnessCentreControllerTest {
         .thenReturn(weightsSlot);
 
     // Act
-    Slot result = fitnessCentreController.addActivity(weightsRequest, centreId);
+    Slot result = fitnessCentreController.addActivity(weightsRequest, centreId).getBody();
 
     // Assert
     assertEquals(Activity.WEIGHTS, result.getActivity());
@@ -203,8 +203,8 @@ class FitnessCentreControllerTest {
         .thenReturn(slot2);
 
     // Act
-    Slot result1 = fitnessCentreController.addActivity(request1, centreId);
-    Slot result2 = fitnessCentreController.addActivity(request2, centreId);
+    Slot result1 = fitnessCentreController.addActivity(request1, centreId).getBody();
+    Slot result2 = fitnessCentreController.addActivity(request2, centreId).getBody();
 
     // Assert
     assertEquals(1L, result1.getId());
@@ -230,7 +230,7 @@ class FitnessCentreControllerTest {
         .thenReturn(slot);
 
     // Act
-    Slot result = fitnessCentreController.addActivity(request, centreId);
+    Slot result = fitnessCentreController.addActivity(request, centreId).getBody();
 
     // Assert
     assertEquals(0, result.getStartTime());
@@ -251,7 +251,7 @@ class FitnessCentreControllerTest {
         .thenReturn(centre);
 
     // Act
-    FitnessCentre result = fitnessCentreController.addFitnessCentre(request);
+    FitnessCentre result = fitnessCentreController.addFitnessCentre(request).getBody();
 
     // Assert
     assertNotNull(result);
