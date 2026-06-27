@@ -54,6 +54,7 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
                 "PUT".equalsIgnoreCase(request.getMethod()) ||
                 "PATCH".equalsIgnoreCase(request.getMethod())) {
             String body = new String(request.getContentAsByteArray(), StandardCharsets.UTF_8);
+            body = maskSensitiveJson(body);
             if (!body.isEmpty()) {
                 if (body.length() > MAX_PAYLOAD_LENGTH) {
                     logger.debug("Request Body: {} (truncated, total length: {})",
@@ -75,6 +76,7 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
         byte[] content = response.getContentAsByteArray();
         if (content.length > 0) {
             String body = new String(content, StandardCharsets.UTF_8);
+            body = maskSensitiveJson(body);
             if (body.length() > MAX_PAYLOAD_LENGTH) {
                 logger.debug("Response Body: {} (truncated, total length: {})",
                         body.substring(0, MAX_PAYLOAD_LENGTH),
@@ -83,6 +85,16 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
                 logger.debug("Response Body: {}", body);
             }
         }
+    }
+
+    private String maskSensitiveJson(String body) {
+        if (body == null || body.isEmpty()) {
+            return body;
+        }
+        // Mask JWS token formats, or any common sensitive keys
+        String masked = body.replaceAll("(\"(?:password|passwordConfirmation|token|secret)\"\\s*:\\s*\")[^\"]+(\")", "$1***MASKED***$2");
+        // Also mask Bearer JWT token formats which can appear in response as starting with "Bearer "
+        return masked.replaceAll("(\"(?:token)\"\\s*:\\s*\"Bearer )([^\"]+)(\")", "$1***MASKED***$3");
     }
 
     private String getHeaders(HttpServletRequest request) {
