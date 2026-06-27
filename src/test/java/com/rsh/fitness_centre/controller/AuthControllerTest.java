@@ -14,6 +14,7 @@ import com.rsh.fitness_centre.entity.response.LoginResponse;
 import com.rsh.fitness_centre.security.JwtTokenProvider;
 import com.rsh.fitness_centre.security.TokenBlacklistService;
 import com.rsh.fitness_centre.service.RefreshTokenService;
+import com.rsh.fitness_centre.service.MetricsService;
 import com.rsh.fitness_centre.service.UserService;
 import com.rsh.fitness_centre.entity.RefreshToken;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,11 +52,14 @@ class AuthControllerTest {
   private RefreshTokenService refreshTokenService;
 
   @Mock
+  private MetricsService metricsService;
+
+  @Mock
   private HttpServletResponse response;
 
   @BeforeEach
   void setUp() {
-    authController = new AuthController(userService, tokenProvider, tokenBlacklistService, refreshTokenService);
+    authController = new AuthController(userService, tokenProvider, tokenBlacklistService, refreshTokenService, metricsService);
   }
 
   @Test

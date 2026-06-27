@@ -78,6 +78,9 @@ public class SecurityConfig {
             .requestMatchers("/auth/register", "/auth/login", "/auth/me", "/auth/refresh").permitAll()
             .requestMatchers("/h2-console/**").permitAll()
             
+            // Actuator endpoints
+            .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+            
             // User endpoints
             .requestMatchers(HttpMethod.POST, "/bookings").authenticated()
             .requestMatchers(HttpMethod.PATCH, "/bookings/**").authenticated()

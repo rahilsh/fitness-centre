@@ -8,6 +8,7 @@ import com.rsh.fitness_centre.entity.response.UserResponse;
 import com.rsh.fitness_centre.security.TokenBlacklistService;
 import com.rsh.fitness_centre.security.JwtTokenProvider;
 import com.rsh.fitness_centre.service.RefreshTokenService;
+import com.rsh.fitness_centre.service.MetricsService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.rsh.fitness_centre.entity.RefreshToken;
@@ -47,14 +48,17 @@ public class AuthController {
   private final JwtTokenProvider tokenProvider;
   private final TokenBlacklistService tokenBlacklistService;
   private final RefreshTokenService refreshTokenService;
+  private final MetricsService metricsService;
 
   @Autowired
   public AuthController(UserService userService, JwtTokenProvider tokenProvider, 
-                        TokenBlacklistService tokenBlacklistService, RefreshTokenService refreshTokenService) {
+                        TokenBlacklistService tokenBlacklistService, RefreshTokenService refreshTokenService,
+                        MetricsService metricsService) {
     this.userService = userService;
     this.tokenProvider = tokenProvider;
     this.tokenBlacklistService = tokenBlacklistService;
     this.refreshTokenService = refreshTokenService;
+    this.metricsService = metricsService;
   }
 
   /**
@@ -103,6 +107,7 @@ public class AuthController {
           .build();
 
       logger.info("User registered successfully: {}", user.getEmail());
+      metricsService.incrementRegistration();
       return ResponseEntity.status(HttpStatus.CREATED).body(response);
     } catch (IllegalArgumentException ex) {
       logger.warn("Registration error: {}", ex.getMessage());
@@ -147,9 +152,11 @@ public class AuthController {
           .build();
 
       logger.info("User logged in successfully: {}", user.getEmail());
+      metricsService.incrementSuccessfulLogin();
       return ResponseEntity.ok(response);
     } catch (IllegalArgumentException ex) {
       logger.warn("Login error: {}", ex.getMessage());
+      metricsService.incrementFailedLogin();
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
   }
