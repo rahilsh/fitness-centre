@@ -119,6 +119,30 @@ public class JwtTokenProvider {
   }
 
   /**
+   * Extract roles from JWT token.
+   *
+   * @param token the JWT token (without Bearer prefix)
+   * @return set of role names
+   */
+  @SuppressWarnings("unchecked")
+  public java.util.Set<String> extractRoles(String token) {
+    try {
+      SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+      Claims claims = Jwts.parser()
+          .verifyWith(key)
+          .build()
+          .parseSignedClaims(token)
+          .getPayload();
+
+      java.util.List<String> roles = claims.get("roles", java.util.List.class);
+      return roles != null ? new java.util.HashSet<>(roles) : java.util.Collections.emptySet();
+    } catch (Exception ex) {
+      logger.error("Failed to extract roles from token: {}", ex.getMessage());
+      return java.util.Collections.emptySet();
+    }
+  }
+
+  /**
    * Get JWT expiration time in seconds.
    *
    * @return expiration time in seconds

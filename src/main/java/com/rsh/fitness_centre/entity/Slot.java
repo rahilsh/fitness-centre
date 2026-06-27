@@ -75,9 +75,11 @@ public class Slot {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "fitness_centre_id", nullable = false)
+  @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"slots", "hibernateLazyInitializer", "handler"})
   private FitnessCentre fitnessCentre;
 
   @OneToMany(mappedBy = "slot")
+  @com.fasterxml.jackson.annotation.JsonIgnore
   private Set<Booking> bookings = new HashSet<>();
   
   public Slot(Long id, LocalDate date, Activity activity, int startTime, int endTime, int noOfSeats, FitnessCentre fitnessCentre) {

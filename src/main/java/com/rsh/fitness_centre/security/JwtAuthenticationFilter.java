@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,13 +41,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Long userId = tokenProvider.extractUserId(jwt);
 
         if (userId != null) {
-          // Create authentication token
+          // Extract roles from token and map to GrantedAuthorities
+          java.util.Set<String> roles = tokenProvider.extractRoles(jwt);
+          java.util.List<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = roles.stream()
+              .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role))
+              .collect(Collectors.toList());
+
+          // Create authentication token with mapped authorities
           UsernamePasswordAuthenticationToken authentication =
-              new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+              new UsernamePasswordAuthenticationToken(userId, null, authorities);
           authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
           SecurityContextHolder.getContext().setAuthentication(authentication);
-          logger.debug("JWT authentication set for user ID: {}", userId);
+          logger.debug("JWT authentication set for user ID: {} with roles: {}", userId, roles);
         }
       }
     } catch (Exception ex) {

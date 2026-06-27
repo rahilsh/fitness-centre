@@ -63,6 +63,40 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
   }
 
+  @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+      org.springframework.web.HttpRequestMethodNotSupportedException ex, WebRequest request) {
+    String path = request.getDescription(false).replace("uri=", "");
+    logger.warn("Method not supported at {}: {}", path, ex.getMessage());
+
+    ErrorResponse errorResponse = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.METHOD_NOT_ALLOWED.value(),
+        "Method Not Allowed",
+        ex.getMessage(),
+        path,
+        null);
+
+    return new ResponseEntity<>(errorResponse, HttpStatus.METHOD_NOT_ALLOWED);
+  }
+
+  @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+  public ResponseEntity<ErrorResponse> handleNoResourceFound(
+      org.springframework.web.servlet.resource.NoResourceFoundException ex, WebRequest request) {
+    String path = request.getDescription(false).replace("uri=", "");
+    logger.warn("Resource not found at {}: {}", path, ex.getMessage());
+
+    ErrorResponse errorResponse = new ErrorResponse(
+        LocalDateTime.now(),
+        HttpStatus.NOT_FOUND.value(),
+        "Not Found",
+        ex.getMessage(),
+        path,
+        null);
+
+    return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGlobalException(
       Exception ex, WebRequest request) {

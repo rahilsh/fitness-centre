@@ -154,7 +154,7 @@ public class AuthController {
 
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    if (authentication == null || !authentication.isAuthenticated()) {
+    if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof Long)) {
       logger.warn("Attempt to get current user without authentication");
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }

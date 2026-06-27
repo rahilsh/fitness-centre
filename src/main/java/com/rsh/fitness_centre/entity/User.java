@@ -73,6 +73,7 @@ public class User {
   private LocalDateTime lastLogin;
 
   @OneToMany(mappedBy = "user")
+  @com.fasterxml.jackson.annotation.JsonIgnore
   private Set<Booking> bookings = new HashSet<>();
   
   public User(Long id, String name) {

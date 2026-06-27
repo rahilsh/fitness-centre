@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Health", description = "Application health check")
 public class HealthCheckController {
 
-  @GetMapping(path = "/healthCheck")
+  @GetMapping(path = "/health")
   @Operation(summary = "Check application health", description = "Verify that the application is running and healthy")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Application is healthy")
