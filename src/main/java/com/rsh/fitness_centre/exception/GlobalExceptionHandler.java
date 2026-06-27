@@ -4,6 +4,8 @@ import com.rsh.fitness_centre.entity.response.ErrorResponse;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -16,6 +18,8 @@ import org.springframework.web.context.request.WebRequest;
 @RestController
 public class GlobalExceptionHandler {
 
+  private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleValidationExceptions(
       MethodArgumentNotValidException ex, WebRequest request) {
@@ -25,6 +29,8 @@ public class GlobalExceptionHandler {
         .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
     String path = request.getDescription(false).replace("uri=", "");
+    
+    logger.warn("Validation error at {}: {}", path, errors);
     
     ErrorResponse errorResponse =
         new ErrorResponse(
@@ -43,6 +49,8 @@ public class GlobalExceptionHandler {
       BookingNotFoundException ex, WebRequest request) {
     String path = request.getDescription(false).replace("uri=", "");
     
+    logger.warn("Booking not found at {}: {}", path, ex.getMessage());
+    
     ErrorResponse errorResponse =
         new ErrorResponse(
             LocalDateTime.now(),
@@ -59,6 +67,8 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponse> handleGlobalException(
       Exception ex, WebRequest request) {
     String path = request.getDescription(false).replace("uri=", "");
+    
+    logger.error("Unexpected error at {}", path, ex);
     
     ErrorResponse errorResponse =
         new ErrorResponse(

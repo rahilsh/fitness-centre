@@ -12,6 +12,8 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class BookingService {
 
+  private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
   private final BookingRepository bookingRepository;
   private final SlotRepository slotRepository;
   private final UserRepository userRepository;
@@ -36,10 +39,12 @@ public class BookingService {
 
   @Transactional
   public Booking addBooking(Long slotId, Long userId) {
+    logger.info("Creating booking for user {} on slot {}", userId, slotId);
     Optional<Slot> slotOpt = slotRepository.findById(slotId);
     Optional<User> userOpt = userRepository.findById(userId);
 
     if (slotOpt.isEmpty() || userOpt.isEmpty()) {
+      logger.warn("Booking creation failed: invalid slot or user ID (slotId={}, userId={})", slotId, userId);
       throw new BookingNotFoundException("Invalid slot or user ID");
     }
 
@@ -50,7 +55,9 @@ public class BookingService {
 
     try {
       mutex.lock();
-      return bookingRepository.save(booking);
+      Booking savedBooking = bookingRepository.save(booking);
+      logger.info("Booking created successfully with ID: {}", savedBooking.getId());
+      return savedBooking;
     } finally {
       mutex.unlock();
     }
@@ -58,28 +65,46 @@ public class BookingService {
 
   @Transactional
   public Booking cancelBooking(Long bookingId) {
+    logger.info("Cancelling booking with ID: {}", bookingId);
     Optional<Booking> bookingOpt = bookingRepository.findById(bookingId);
     if (bookingOpt.isEmpty()) {
+      logger.warn("Cancel booking failed: booking not found (bookingId={})", bookingId);
       throw new BookingNotFoundException("Invalid bookingId: " + bookingId);
     }
     Booking booking = bookingOpt.get();
     booking.setStatus(BookingStatus.CANCELLED);
-    return bookingRepository.save(booking);
+    Booking savedBooking = bookingRepository.save(booking);
+    logger.info("Booking cancelled successfully with ID: {}", bookingId);
+    return savedBooking;
   }
 
   public Set<Booking> getBookingsOfCentre(Long centreId) {
-    return new HashSet<>(bookingRepository.getBookingsByCentre(centreId));
+    logger.debug("Retrieving bookings for centre: {}", centreId);
+    Set<Booking> bookings = new HashSet<>(bookingRepository.getBookingsByCentre(centreId));
+    logger.debug("Found {} bookings for centre {}", bookings.size(), centreId);
+    return bookings;
   }
 
   public Booking getBooking(Long bookingId) {
-    return bookingRepository.findById(bookingId).orElse(null);
+    logger.debug("Retrieving booking with ID: {}", bookingId);
+    Booking booking = bookingRepository.findById(bookingId).orElse(null);
+    if (booking == null) {
+      logger.warn("Booking not found with ID: {}", bookingId);
+    }
+    return booking;
   }
 
   public Set<Booking> getBookings() {
-    return new HashSet<>(bookingRepository.findAll());
+    logger.debug("Retrieving all bookings");
+    Set<Booking> bookings = new HashSet<>(bookingRepository.findAll());
+    logger.debug("Found {} bookings", bookings.size());
+    return bookings;
   }
 
   public Set<Booking> getBookingsByUser(Long userId) {
-    return new HashSet<>(bookingRepository.getBookingsByUser(userId));
+    logger.debug("Retrieving bookings for user: {}", userId);
+    Set<Booking> bookings = new HashSet<>(bookingRepository.getBookingsByUser(userId));
+    logger.debug("Found {} bookings for user {}", bookings.size(), userId);
+    return bookings;
   }
 }
