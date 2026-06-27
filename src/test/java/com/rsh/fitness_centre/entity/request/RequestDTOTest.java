@@ -254,12 +254,12 @@ class RequestDTOTest {
   @Test
   @DisplayName("RegisterRequest - Should create with valid data")
   void testRegisterRequestValid() {
-    RegisterRequest request = new RegisterRequest("john@example.com", "John Doe", "SecurePass123", "SecurePass123");
+    RegisterRequest request = new RegisterRequest("john@example.com", "John Doe", "SecurePass123!", "SecurePass123!");
 
     assertEquals("john@example.com", request.getEmail());
     assertEquals("John Doe", request.getName());
-    assertEquals("SecurePass123", request.getPassword());
-    assertEquals("SecurePass123", request.getPasswordConfirmation());
+    assertEquals("SecurePass123!", request.getPassword());
+    assertEquals("SecurePass123!", request.getPasswordConfirmation());
   }
 
   @Test
@@ -321,10 +321,10 @@ class RequestDTOTest {
   @Test
   @DisplayName("LoginRequest - Should create with valid email and password")
   void testLoginRequestValid() {
-    LoginRequest request = new LoginRequest("john@example.com", "SecurePass123");
+    LoginRequest request = new LoginRequest("john@example.com", "SecurePass123!");
 
     assertEquals("john@example.com", request.getEmail());
-    assertEquals("SecurePass123", request.getPassword());
+    assertEquals("SecurePass123!", request.getPassword());
   }
 
   @Test

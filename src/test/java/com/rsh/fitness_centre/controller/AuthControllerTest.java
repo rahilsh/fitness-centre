@@ -62,7 +62,7 @@ class AuthControllerTest {
   @DisplayName("Should register user successfully")
   void testRegisterSuccess() {
     RegisterRequest request = new RegisterRequest("john@example.com", "John Doe",
-        "SecurePass123", "SecurePass123");
+        "SecurePass123!", "SecurePass123!");
 
     User user = new User(1L, "John Doe", "john@example.com");
     user.setRoles(Set.of(UserRole.USER));
@@ -85,7 +85,7 @@ class AuthControllerTest {
   @DisplayName("Should fail register with password mismatch")
   void testRegisterPasswordMismatch() {
     RegisterRequest request = new RegisterRequest("john@example.com", "John Doe",
-        "SecurePass123", "DifferentPass456");
+        "SecurePass123!", "DifferentPass456!");
 
     ResponseEntity<LoginResponse> responseEntity = authController.register(request, response);
 
@@ -96,7 +96,7 @@ class AuthControllerTest {
   @DisplayName("Should fail register with duplicate email")
   void testRegisterDuplicateEmail() {
     RegisterRequest request = new RegisterRequest("john@example.com", "John Doe",
-        "SecurePass123", "SecurePass123");
+        "SecurePass123!", "SecurePass123!");
 
     when(userService.registerUser(anyString(), anyString(), anyString()))
         .thenThrow(new IllegalArgumentException("User with email already exists"));
@@ -109,7 +109,7 @@ class AuthControllerTest {
   @Test
   @DisplayName("Should login user successfully")
   void testLoginSuccess() {
-    LoginRequest request = new LoginRequest("john@example.com", "SecurePass123");
+    LoginRequest request = new LoginRequest("john@example.com", "SecurePass123!");
 
     User user = new User(1L, "John Doe", "john@example.com");
     user.setRoles(Set.of(UserRole.USER));

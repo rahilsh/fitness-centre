@@ -1,5 +1,6 @@
 package com.rsh.fitness_centre.entity.request;
 
+import com.rsh.fitness_centre.validation.PasswordPolicy;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -28,7 +29,7 @@ public class RegisterRequest {
   private String name;
 
   @NotBlank(message = "Password is required")
-  @Size(min = 8, message = "Password must be at least 8 characters")
+  @PasswordPolicy
   @Schema(description = "User password", example = "SecurePassword123!")
   private String password;
 

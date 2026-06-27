@@ -99,8 +99,8 @@ public class HttpFunctionalTests {
         RegisterRequest registerReq = new RegisterRequest();
         registerReq.setEmail("testuser@example.com");
         registerReq.setName("Test User");
-        registerReq.setPassword("TestPass123");
-        registerReq.setPasswordConfirmation("TestPass123");
+        registerReq.setPassword("TestPass123!");
+        registerReq.setPasswordConfirmation("TestPass123!");
 
         HttpRequest registerHttpReq = HttpRequest.newBuilder()
                 .uri(URI.create(getBaseUrl() + "/auth/register"))
@@ -119,7 +119,7 @@ public class HttpFunctionalTests {
         // 2. HTTP POST /auth/login to get token
         LoginRequest loginReq = new LoginRequest();
         loginReq.setEmail("testuser@example.com");
-        loginReq.setPassword("TestPass123");
+        loginReq.setPassword("TestPass123!");
 
         HttpRequest loginHttpReq = HttpRequest.newBuilder()
                 .uri(URI.create(getBaseUrl() + "/auth/login"))
@@ -194,8 +194,8 @@ public class HttpFunctionalTests {
         RegisterRequest badReq = new RegisterRequest();
         badReq.setEmail("invalid-email");
         badReq.setName("Bad User");
-        badReq.setPassword("TestPass123");
-        badReq.setPasswordConfirmation("TestPass123");
+        badReq.setPassword("TestPass123!");
+        badReq.setPasswordConfirmation("TestPass123!");
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(getBaseUrl() + "/auth/register"))
