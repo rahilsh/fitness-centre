@@ -1,10 +1,14 @@
 package com.rsh.fitness_centre.entity.request;
 
 import com.google.common.base.Objects;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class AddUserRequest {
+  @NotBlank(message = "User name is required")
+  @Size(min = 2, max = 100, message = "Name must be between 2-100 characters")
   private String name;
 
   @Override

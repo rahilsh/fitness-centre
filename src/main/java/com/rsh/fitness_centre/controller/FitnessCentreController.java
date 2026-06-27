@@ -6,12 +6,13 @@ import com.rsh.fitness_centre.entity.Slot;
 import com.rsh.fitness_centre.entity.request.AddActivityRequest;
 import com.rsh.fitness_centre.entity.request.AddFitnessCentreRequest;
 import com.rsh.fitness_centre.service.FitnessCentreService;
+import jakarta.validation.Valid;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,8 +28,8 @@ public class FitnessCentreController {
     this.fitnessCentreService = fitnessCentreService;
   }
 
-  @PutMapping
-  public FitnessCentre addFitnessCentre(@RequestBody AddFitnessCentreRequest request) {
+  @PostMapping
+  public FitnessCentre addFitnessCentre(@Valid @RequestBody AddFitnessCentreRequest request) {
     return fitnessCentreService.addCentre(
         request.getName(),
         request.getTimings(),
@@ -37,9 +38,9 @@ public class FitnessCentreController {
             .collect(Collectors.toSet()));
   }
 
-  @PutMapping("/{fitnessCentreId}/slots")
+  @PostMapping("/{fitnessCentreId}/slots")
   public Slot addActivity(
-      @RequestBody AddActivityRequest request, @PathVariable int fitnessCentreId) {
+      @Valid @RequestBody AddActivityRequest request, @PathVariable int fitnessCentreId) {
     return fitnessCentreService.addActivity(
         request.getFitnessCentreId(),
         request.getActivity(),
