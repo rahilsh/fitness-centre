@@ -11,7 +11,6 @@ import com.rsh.fitness_centre.repository.UserRepository;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +24,6 @@ public class BookingService {
   private final BookingRepository bookingRepository;
   private final SlotRepository slotRepository;
   private final UserRepository userRepository;
-  private final ReentrantLock mutex = new ReentrantLock();
 
   @Autowired
   public BookingService(
@@ -39,8 +37,8 @@ public class BookingService {
 
   @Transactional
   public Booking addBooking(Long slotId, Long userId) {
-    logger.info("Creating booking for user {} on slot {}", userId, slotId);
-    Optional<Slot> slotOpt = slotRepository.findById(slotId);
+    logger.info("Creating booking for user {} on slot {} with pessimistic database write lock", userId, slotId);
+    Optional<Slot> slotOpt = slotRepository.findByIdWithPessimisticLock(slotId);
     Optional<User> userOpt = userRepository.findById(userId);
 
     if (slotOpt.isEmpty() || userOpt.isEmpty()) {
@@ -52,15 +50,9 @@ public class BookingService {
     User user = userOpt.get();
 
     Booking booking = new Booking(null, user, slot, null, BookingStatus.BOOKED);
-
-    try {
-      mutex.lock();
-      Booking savedBooking = bookingRepository.save(booking);
-      logger.info("Booking created successfully with ID: {}", savedBooking.getId());
-      return savedBooking;
-    } finally {
-      mutex.unlock();
-    }
+    Booking savedBooking = bookingRepository.save(booking);
+    logger.info("Booking created successfully with ID: {} on thread-safe database transaction", savedBooking.getId());
+    return savedBooking;
   }
 
   @Transactional

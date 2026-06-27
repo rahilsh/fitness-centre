@@ -16,4 +16,8 @@ public interface SlotRepository extends JpaRepository<Slot, Long> {
   
   @Query("SELECT s FROM Slot s WHERE s.fitnessCentre.id = :centreId")
   List<Slot> getSlotsByCenter(@Param("centreId") Long centreId);
+
+  @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT s FROM Slot s WHERE s.id = :id")
+  java.util.Optional<Slot> findByIdWithPessimisticLock(@Param("id") Long id);
 }

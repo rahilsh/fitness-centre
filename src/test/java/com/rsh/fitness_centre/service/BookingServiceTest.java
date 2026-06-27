@@ -73,7 +73,7 @@ class BookingServiceTest {
     Slot mockSlot = createSlot(slotId);
     Booking expectedBooking = createBooking(1L, mockUser, mockSlot, BookingStatus.BOOKED);
 
-    when(slotRepository.findById(slotId)).thenReturn(Optional.of(mockSlot));
+    when(slotRepository.findByIdWithPessimisticLock(slotId)).thenReturn(Optional.of(mockSlot));
     when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
     when(bookingRepository.save(any(Booking.class))).thenReturn(expectedBooking);
 
@@ -86,7 +86,7 @@ class BookingServiceTest {
     assertEquals(slotId, result.getSlot().getId());
     assertEquals(userId, result.getUser().getId());
     assertEquals(BookingStatus.BOOKED, result.getStatus());
-    verify(slotRepository, times(1)).findById(slotId);
+    verify(slotRepository, times(1)).findByIdWithPessimisticLock(slotId);
     verify(userRepository, times(1)).findById(userId);
     verify(bookingRepository, times(1)).save(any(Booking.class));
   }
@@ -99,7 +99,7 @@ class BookingServiceTest {
     Long userId = 100L;
     User mockUser = createUser(userId, "John");
 
-    when(slotRepository.findById(slotId)).thenReturn(Optional.empty());
+    when(slotRepository.findByIdWithPessimisticLock(slotId)).thenReturn(Optional.empty());
     when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 
     // Act & Assert
