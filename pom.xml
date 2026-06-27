@@ -15,7 +15,7 @@
   <name>fitness-centre</name>
   <description>fitness-centre</description>
   <properties>
-    <java.version>17</java.version>
+    <java.version>21</java.version>
   </properties>
   <dependencies>
     <dependency>
