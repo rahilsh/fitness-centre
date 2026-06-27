@@ -58,15 +58,17 @@ class UserControllerTest {
     Set<User> users = new HashSet<>();
     users.add(new User(1L, "John Doe"));
     users.add(new User(2L, "Jane Doe"));
-    when(userService.getAllUsers()).thenReturn(users);
+    org.springframework.data.domain.Page<User> page = new org.springframework.data.domain.PageImpl<>(new java.util.ArrayList<>(users));
+    when(userService.getAllUsers(0, 20, "name")).thenReturn(page);
 
     // Act
-    Set<User> result = userController.getAllUsers();
+    org.springframework.http.ResponseEntity<?> response = userController.getAllUsers(0, 20, "name");
+    org.springframework.data.domain.Page<User> result = (org.springframework.data.domain.Page<User>) response.getBody();
 
     // Assert
     assertNotNull(result);
-    assertEquals(2, result.size());
-    verify(userService, times(1)).getAllUsers();
+    assertEquals(2, result.getContent().size());
+    verify(userService, times(1)).getAllUsers(0, 20, "name");
   }
 
   @Test
@@ -91,14 +93,16 @@ class UserControllerTest {
   @DisplayName("Should get empty set of users")
   void testGetAllUsersEmpty() {
     // Arrange
-    when(userService.getAllUsers()).thenReturn(new HashSet<>());
+    org.springframework.data.domain.Page<User> page = new org.springframework.data.domain.PageImpl<>(new java.util.ArrayList<>());
+    when(userService.getAllUsers(0, 20, "name")).thenReturn(page);
 
     // Act
-    Set<User> result = userController.getAllUsers();
+    org.springframework.http.ResponseEntity<?> response = userController.getAllUsers(0, 20, "name");
+    org.springframework.data.domain.Page<User> result = (org.springframework.data.domain.Page<User>) response.getBody();
 
     // Assert
     assertNotNull(result);
-    assertEquals(0, result.size());
+    assertEquals(0, result.getContent().size());
   }
 
   @Test

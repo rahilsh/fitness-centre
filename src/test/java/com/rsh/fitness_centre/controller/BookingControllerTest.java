@@ -116,15 +116,17 @@ class BookingControllerTest {
     Set<Booking> bookings = new HashSet<>();
     bookings.add(createBooking(1L, createUser(1L, "John"), createSlot(1L), BookingStatus.BOOKED));
     bookings.add(createBooking(2L, createUser(2L, "Jane"), createSlot(2L), BookingStatus.BOOKED));
-    when(bookingService.getBookings()).thenReturn(bookings);
+    org.springframework.data.domain.Page<Booking> page = new org.springframework.data.domain.PageImpl<>(new java.util.ArrayList<>(bookings));
+    when(bookingService.getBookings(0, 20, "bookedAt")).thenReturn(page);
 
     // Act
-    Set<Booking> result = bookingController.getBookings();
+    org.springframework.http.ResponseEntity<?> response = bookingController.getBookings(0, 20, "bookedAt");
+    org.springframework.data.domain.Page<Booking> result = (org.springframework.data.domain.Page<Booking>) response.getBody();
 
     // Assert
     assertNotNull(result);
-    assertEquals(2, result.size());
-    verify(bookingService, times(1)).getBookings();
+    assertEquals(2, result.getContent().size());
+    verify(bookingService, times(1)).getBookings(0, 20, "bookedAt");
   }
 
   @Test
@@ -213,14 +215,16 @@ class BookingControllerTest {
   @DisplayName("Should get empty set of bookings")
   void testGetAllBookingsEmpty() {
     // Arrange
-    when(bookingService.getBookings()).thenReturn(new HashSet<>());
+    org.springframework.data.domain.Page<Booking> page = new org.springframework.data.domain.PageImpl<>(new java.util.ArrayList<>());
+    when(bookingService.getBookings(0, 20, "bookedAt")).thenReturn(page);
 
     // Act
-    Set<Booking> result = bookingController.getBookings();
+    org.springframework.http.ResponseEntity<?> response = bookingController.getBookings(0, 20, "bookedAt");
+    org.springframework.data.domain.Page<Booking> result = (org.springframework.data.domain.Page<Booking>) response.getBody();
 
     // Assert
     assertNotNull(result);
-    assertEquals(0, result.size());
+    assertEquals(0, result.getContent().size());
   }
 
   @Test

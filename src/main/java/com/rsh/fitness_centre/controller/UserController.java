@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -45,12 +46,15 @@ public class UserController {
   }
 
   @GetMapping
-  @Operation(summary = "Retrieve all users", description = "Get a list of all registered users")
+  @Operation(summary = "Retrieve all users", description = "Get a paginated and sorted list of all registered users")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Users retrieved successfully",
           content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class)))
   })
-  public Set<User> getAllUsers() {
-    return userService.getAllUsers();
+  public ResponseEntity<?> getAllUsers(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(defaultValue = "name") String sortBy) {
+    return ResponseEntity.ok(userService.getAllUsers(page, size, sortBy));
   }
 }

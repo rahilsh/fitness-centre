@@ -278,7 +278,8 @@ public class HttpFunctionalTests {
         // Fetch users list
         HttpResponse<String> listResponse = sendAuthorizedRequest("GET", "/users", null);
         assertEquals(200, listResponse.statusCode());
-        List<?> listBody = objectMapper.readValue(listResponse.body(), List.class);
+        Map<?, ?> pageBody = objectMapper.readValue(listResponse.body(), Map.class);
+        List<?> listBody = (List<?>) pageBody.get("content");
         assertTrue(listBody.size() >= 2); // includes registered testuser
     }
 

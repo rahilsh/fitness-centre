@@ -101,6 +101,12 @@ public class BookingService {
     return bookings;
   }
 
+  public org.springframework.data.domain.Page<Booking> getBookings(int page, int size, String sortBy) {
+    logger.debug("Retrieving bookings with page: {}, size: {}, sortBy: {}", page, size, sortBy);
+    org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by(sortBy));
+    return bookingRepository.findAll(pageable);
+  }
+
   public Set<Booking> getBookingsByUser(Long userId) {
     logger.debug("Retrieving bookings for user: {}", userId);
     Set<Booking> bookings = new HashSet<>(bookingRepository.getBookingsByUser(userId));

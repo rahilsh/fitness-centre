@@ -40,6 +40,12 @@ public class UserService {
     return users;
   }
 
+  public org.springframework.data.domain.Page<User> getAllUsers(int page, int size, String sortBy) {
+    logger.debug("Retrieving users with page: {}, size: {}, sortBy: {}", page, size, sortBy);
+    org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by(sortBy));
+    return userRepository.findAll(pageable);
+  }
+
   public User getUserById(Long id) {
     logger.debug("Retrieving user by ID: {}", id);
     User user = userRepository.findById(id).orElse(null);

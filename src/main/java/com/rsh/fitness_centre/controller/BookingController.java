@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -72,12 +73,15 @@ public class BookingController {
   }
 
   @GetMapping
-  @Operation(summary = "Get all bookings", description = "Retrieve a list of all bookings")
+  @Operation(summary = "Get all bookings", description = "Retrieve a paginated and sorted list of all bookings")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Bookings retrieved successfully",
           content = @Content(mediaType = "application/json", schema = @Schema(implementation = Booking.class)))
   })
-  public Set<Booking> getBookings(){
-	  return bookingService.getBookings();
+  public ResponseEntity<?> getBookings(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(defaultValue = "bookedAt") String sortBy) {
+    return ResponseEntity.ok(bookingService.getBookings(page, size, sortBy));
   }
 }
