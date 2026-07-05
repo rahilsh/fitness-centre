@@ -2,17 +2,46 @@ package com.rsh.fitness_centre.repository;
 
 import com.rsh.fitness_centre.entity.Booking;
 import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
-@Repository
-public interface BookingRepository extends JpaRepository<Booking, Long> {
+/**
+ * Repository interface for Booking entity.
+ * Implementation uses JDBC instead of JPA.
+ */
+public interface BookingRepository {
   
-  @Query("SELECT b FROM Booking b WHERE b.user.id = :userId")
-  List<Booking> getBookingsByUser(@Param("userId") Long userId);
+  Booking save(Booking booking);
+
+  Optional<Booking> findById(Long id);
+
+  List<Booking> getBookingsByUser(Long userId);
   
-  @Query("SELECT b FROM Booking b WHERE b.slot.fitnessCentre.id = :centreId")
-  List<Booking> getBookingsByCentre(@Param("centreId") Long centreId);
+  List<Booking> getBookingsByCentre(Long centreId);
+
+  List<Booking> findAll();
+  
+  /**
+   * Find all bookings with pagination.
+   * @param pageable pagination parameters
+   * @return Page of bookings
+   */
+  default Page<Booking> findAll(Pageable pageable) {
+    List<Booking> all = findAll();
+    int start = (int) pageable.getOffset();
+    int end = Math.min(start + pageable.getPageSize(), all.size());
+    return new PageImpl<>(all.subList(start, end), pageable, all.size());
+  }
+
+  void delete(Long id);
+
+  void deleteById(Long id);
+
+  void deleteAll();
+
+  long count();
+
+  boolean existsById(Long id);
 }

@@ -3,21 +3,38 @@ package com.rsh.fitness_centre.repository;
 import com.rsh.fitness_centre.entity.Slot;
 import java.time.LocalDate;
 import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
-@Repository
-public interface SlotRepository extends JpaRepository<Slot, Long> {
+/**
+ * Repository interface for Slot entity.
+ * Implementation uses JDBC instead of JPA.
+ */
+public interface SlotRepository {
   
-  @Query("SELECT s FROM Slot s WHERE s.fitnessCentre.id = :centreId AND s.date = :date")
-  List<Slot> getSlotsByDate(@Param("centreId") Long centreId, @Param("date") LocalDate date);
-  
-  @Query("SELECT s FROM Slot s WHERE s.fitnessCentre.id = :centreId")
-  List<Slot> getSlotsByCenter(@Param("centreId") Long centreId);
+  Slot save(Slot slot);
 
-  @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-  @Query("SELECT s FROM Slot s WHERE s.id = :id")
-  java.util.Optional<Slot> findByIdWithPessimisticLock(@Param("id") Long id);
+  Optional<Slot> findById(Long id);
+
+  List<Slot> getSlotsByDate(Long centreId, LocalDate date);
+  
+  List<Slot> getSlotsByCenter(Long centreId);
+
+  /**
+   * Find slot by ID with pessimistic write lock (simulated using "SELECT ... FOR UPDATE").
+   * @param id the slot ID
+   * @return the slot if found
+   */
+  Optional<Slot> findByIdWithPessimisticLock(Long id);
+
+  List<Slot> findAll();
+
+  void delete(Long id);
+
+  void deleteById(Long id);
+
+  void deleteAll();
+
+  long count();
+
+  boolean existsById(Long id);
 }
