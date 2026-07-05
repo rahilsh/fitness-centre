@@ -11,7 +11,18 @@ A Spring Boot REST API for managing fitness centres, user bookings, and activity
 - **Activity Search**: Search for available activities across centres
 - **Health Check**: Application health monitoring endpoint
 
-### ✅ Recent Enhancements (v1.2.0)
+### ✅ Recent Enhancements (v1.3.0)
+
+#### JdbcTemplate Migration (Lightweight ORM-Free Data Access)
+- **Removed JPA/Hibernate Dependency**: Complete migration from Spring Data JPA to Spring's lightweight `JdbcTemplate`
+- **5 JDBC Repository Implementations**: Custom `UserJdbcRepository`, `RefreshTokenJdbcRepository`, `BookingJdbcRepository`, `SlotJdbcRepository`, `FitnessCentreJdbcRepository`
+- **Manual RowMapper Implementations**: Explicit SQL-to-Object mapping with proper NULL handling for all entities
+- **Explicit SQL Control**: Direct SQL queries with `NamedParameterJdbcTemplate` for transparency and performance
+- **Pessimistic Locking**: Slot reservation protection via `SELECT ... FOR UPDATE` clause
+- **Cascade Delete Management**: Manual cascade deletes on user deletion for referential integrity
+- **Zero Service Layer Changes**: Transparent JDBC implementation (repositories still injectable via interfaces)
+
+### ✅ Previous Enhancements (v1.2.0)
 
 #### Authentication & Authorization (JWT)
 - **Role-Based Access Control (RBAC)**: Secure endpoints with distinct authorization permissions for `ANONYMOUS`, `USER`, `ADMIN`, and `SUPER_ADMIN` roles.
@@ -41,10 +52,10 @@ A Spring Boot REST API for managing fitness centres, user bookings, and activity
 - HTTP status code documentation
 
 #### Database Layer Improvements
-- **JPA Relationships**: Proper foreign key constraints between entities
-- **Audit Fields**: Automatic tracking of creation and modification timestamps
+- **JDBC-Based Data Access**: Direct SQL queries with explicit control over execution
+- **Audit Fields**: Manual timestamp tracking in entity constructors
 - **Database Constraints**: Unique constraints on names, composite uniqueness on slots
-- **Lazy Loading**: Optimized query performance with FetchType.LAZY
+- **Explicit NULL Handling**: Proper null checks in RowMapper implementations
 - **Auto-increment IDs**: Database-managed ID generation (Long type for scalability)
 
 #### Data Integrity
@@ -57,16 +68,18 @@ A Spring Boot REST API for managing fitness centres, user bookings, and activity
 
 - **Java**: 21 (LTS)
 - **Framework**: Spring Boot 4.1.0
+- **Database Access**: Spring JdbcTemplate (lightweight, ORM-free)
 - **Database**: 
   - H2 (local development)
   - PostgreSQL (production)
   - MySQL (alternative production)
-- **ORM**: Spring Data JPA / Hibernate
 - **Validation**: Jakarta Validation API
+- **Security**: Spring Security + JWT (HS256)
 - **API Documentation**: Springdoc OpenAPI 2.3.0 / Swagger UI
 - **Testing**: JUnit 5, Mockito, Spring Boot Test
-- **Code Coverage**: JaCoCo (91.93% coverage)
+- **Code Coverage**: JaCoCo (>85% coverage)
 - **Build Tool**: Maven
+- **Observability**: Micrometer Tracing + OpenTelemetry, Prometheus Metrics
 
 ## 📋 Prerequisites
 
@@ -178,13 +191,14 @@ open target/site/jacoco/index.html
 ## 🗄️ Database Configuration
 
 ### Local Development (H2 In-Memory)
-Configured automatically in `application.properties`:
+Configured automatically in `application.properties` and `application-test.properties`:
 ```properties
 spring.datasource.url=jdbc:h2:mem:testdb
-spring.jpa.hibernate.ddl-auto=create-drop
+spring.datasource.driverClassName=org.h2.Driver
+spring.sql.init.mode=always
 ```
 
-No external database setup needed! Data is created fresh on startup.
+Database schema is auto-created from `src/main/resources/schema.sql` on startup. No external database setup needed! Data is created fresh on startup.
 
 ### Production Deployment
 
@@ -230,22 +244,25 @@ Invalid requests return error responses:
 
 ## 📊 Project Statistics
 
-- **Lines of Code**: ~3,000+
-- **Test Cases**: 273
-- **Code Coverage**: >85% (meets threshold)
+- **Lines of Code**: ~4,500+
+- **Test Cases**: 281
+- **Code Coverage**: >85% (meets JaCoCo threshold)
 - **Java Version**: 21 (LTS)
-- **API Endpoints**: 10+
-- **Database Tables**: 4 (User, Booking, FitnessCentre, Slot)
+- **API Endpoints**: 15+
+- **Database Tables**: 6 (app_user, user_roles, refresh_token, booking, fitness_centre, slot)
+- **JDBC Repositories**: 5 (User, RefreshToken, Booking, Slot, FitnessCentre)
 - **Documented Endpoints**: 100% in Swagger UI
+- **Security Features**: JWT auth, token blacklist, password policies, RBAC
 
 ## 🔄 Recent Commits
 
 ```
-fe585ab - feat: implement database relationships and audit fields
-ca1e15a - feat: add Swagger/OpenAPI documentation
-f5b4e2b - feat: add input validation and global error handling
-bb8d13a - feat: migrate from in-memory stores to Spring Data JPA
-29631e5 - chore: migration to jdk 21
+42a491a - Migrate from JPA to JdbcTemplate for all repositories
+67ae631 - feat: distributed tracing with OpenTelemetry & Jaeger
+db3ad41 - feat: Spring Boot Actuator & Prometheus metrics
+c5bec89 - feat: password complexity policies & validation
+0254884 - feat: refresh token pattern with HttpOnly cookies (7 days)
+06c75e0 - feat: token blacklisting via Redis/in-memory cache
 ```
 
 ## 📁 Project Structure
@@ -254,15 +271,21 @@ bb8d13a - feat: migrate from in-memory stores to Spring Data JPA
 fitness-centre/
 ├── src/
 │   ├── main/java/com/rsh/fitness_centre/
-│   │   ├── config/          # Spring configurations (JPA, Swagger)
-│   │   ├── controller/      # REST endpoints
-│   │   ├── entity/          # JPA entities
-│   │   ├── repository/      # Spring Data JPA repositories
-│   │   ├── service/         # Business logic
-│   │   ├── exception/       # Custom exceptions & handlers
-│   │   └── util/            # Utilities
-│   ├── test/java/           # Unit and integration tests
+│   │   ├── config/          # Spring configurations (Security, Auditing, etc.)
+│   │   ├── controller/      # REST API endpoints
+│   │   ├── entity/          # Plain POJOs (no JPA annotations)
+│   │   ├── repository/      # JDBC repository implementations (JdbcTemplate-based)
+│   │   ├── service/         # Business logic layer
+│   │   ├── security/        # JWT, token blacklist, authentication
+│   │   ├── validation/      # Custom validators (password policy, etc.)
+│   │   ├── exception/       # Custom exceptions & global error handling
+│   │   └── util/            # Utility classes
+│   ├── test/java/           # Unit, integration, and E2E HTTP functional tests
 │   └── main/resources/      # Configuration files
+│       ├── application.properties          # Default properties
+│       ├── application-test.properties     # Test profile with H2 config
+│       ├── application-prod.properties     # Production tracing config
+│       └── schema.sql                      # H2 database schema
 ├── .docs/                   # Documentation (gitignored)
 │   ├── IMPROVEMENTS.md      # Detailed improvement suggestions
 │   └── AUTH_DESIGN.md       # Authentication design document
@@ -271,17 +294,27 @@ fitness-centre/
 └── FitnessCentre.http       # API request examples
 ```
 
-## 🚀 Upcoming Features
+## 🚀 Feature Roadmap
 
-- ✅ ~~Input Validation~~ (v1.1.0)
-- ✅ ~~API Documentation (Swagger)~~ (v1.1.0)
-- ✅ ~~Database Relationships~~ (v1.1.0)
-- ✅ ~~Authentication & Authorization (JWT)~~ (v1.2.0)
-- ✅ ~~Logging & Monitoring~~ (v1.2.0)
-- ✅ ~~Response DTOs~~ (v1.2.0)
-- ✅ ~~E2E HTTP Functional Tests~~ (v1.2.0)
-- 🔲 Pagination & Filtering
-- 🔲 Transaction Management
+**Completed:**
+- ✅ Input Validation (v1.1.0)
+- ✅ API Documentation (Swagger) (v1.1.0)
+- ✅ Database Relationships (v1.1.0)
+- ✅ Authentication & Authorization (JWT) (v1.2.0)
+- ✅ Token Blacklisting (v1.2.0)
+- ✅ Refresh Tokens with HttpOnly Cookies (v1.2.0)
+- ✅ Password Complexity Policies (v1.2.0)
+- ✅ Spring Boot Actuator & Prometheus Metrics (v1.2.0)
+- ✅ OpenTelemetry Distributed Tracing (v1.2.0)
+- ✅ E2E HTTP Functional Tests (v1.2.0)
+- ✅ JdbcTemplate Migration (ORM-free) (v1.3.0)
+
+**Planned:**
+- 🔲 Advanced Pagination & Filtering
+- 🔲 GraphQL API Layer
+- 🔲 Redis Caching Layer
+- 🔲 Event-Driven Architecture
+- 🔲 Machine Learning for recommendation engine
 
 See [.docs/IMPROVEMENTS.md](.docs/IMPROVEMENTS.md) for detailed improvement roadmap.
 
@@ -319,4 +352,4 @@ For questions or support, open a GitHub issue or reach out via email.
 
 ---
 
-**Last Updated**: June 27, 2026 | **Version**: 1.2.0
+**Last Updated**: July 6, 2026 | **Version**: 1.3.0
